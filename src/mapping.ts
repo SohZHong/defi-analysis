@@ -57,6 +57,7 @@ export function handleFlashLoan(event: FlashLoanEvent): void {
   tx.user = user.id;
   tx.eventType = "FlashLoan";
   tx.amount = event.params.amount;
+  tx.reserve = event.params.asset;
   tx.timestamp = event.block.timestamp.toI64();
   tx.transactionHash = event.transaction.hash;
   tx.save();
