@@ -4,6 +4,8 @@ This subgraph indexes and analyzes user interactions with Aave's lending protoco
 
 By using The Graph Protocol, this subgraph enables efficient querying and retrieval of historical user data. Moreover, it also provides a daily report of user transaction statistics through time-series data, making it useful for DeFi analytics dashboards, research, and portfolio tracking.
 
+[Subgraph Link](https://thegraph.com/studio/subgraph/defi-analysis/playground)
+
 ## 📌 Overview of Event Handlers
 
 Each event updates **user balances** and logs a **transaction record**.
