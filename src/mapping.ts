@@ -75,6 +75,7 @@ export function handleLiquidationCall(event: LiquidationCallEvent): void {
   tx.user = user.id;
   tx.eventType = "Liquidation";
   tx.amount = event.params.liquidatedCollateralAmount;
+  tx.reserve = event.params.collateralAsset;
   tx.timestamp = event.block.timestamp.toI64();
   tx.transactionHash = event.transaction.hash;
   tx.save();
