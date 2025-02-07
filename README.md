@@ -187,5 +187,16 @@ This subgraph tracks historical data efficiently by:
 4.	Collateral Usage Tracking:
 - A simple `useReserveAsCollateral` boolean tracks collateral enable/disable events.
 
-## Challenges and Solutions
+## 🚧 Challenges and Solutions
+1. Finding the ABI of the Actual Contract
+**Challenge:** Aave’s website primarily provides the proxy contract address, making it difficult to retrieve the actual implementation contract’s ABI.
+**Solution:** I manually traced the proxy contract and find the correct implementation address (PoolInstance) using Etherscan.
+
+2. Optimizing Subgraph with Time-Series Data
+**Challenge:** Handling large amounts of historical transaction data efficiently was a challenge, as querying raw events in bulk could lead to performance bottlenecks
+**Solution:** I referred to [The Graph's documentation](https://thegraph.com/docs/en/subgraphs/cookbook/timeseries/) and experimented on another subgraph to familiar myself with time-series aggregation. The key metrics can then be pre-computed by the database and improve query performance.
+
+3. Identifying Relevant Events
+**Challenge:** Aave's pool contract emits too many events and I had a hard time trying to identify which is useful.
+**Solution:** I conducted research through ChatGPT and online sources to determine which is useful for a user-focused analysis. This helped me modify the subgraph's schema accordingly and avoid unnecessary data processing.
 
