@@ -25,7 +25,7 @@ const SEARCH_QUERY = gql`
   }
 `;
 
-interface UserTransaction {
+export interface UserTransaction {
   id: string;
   amount: string;
   eventType: string;
@@ -34,7 +34,7 @@ interface UserTransaction {
   transactionHash: string;
 }
 
-interface User {
+export interface User {
   id: string;
   totalSupplied: string;
   totalBorrowed: string;
@@ -45,7 +45,7 @@ interface User {
   transactions: UserTransaction[];
 }
 
-interface SearchResults {
+export interface SearchResults {
   user: User | null;
 }
 
