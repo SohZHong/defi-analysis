@@ -1,9 +1,10 @@
 import { gql, request } from "graphql-request";
 
-const url = "https://api.studio.thegraph.com/query/90479/defi-analysis/version/latest";
+const url =
+  "https://api.studio.thegraph.com/query/90479/defi-analysis/version/latest";
 
 const SEARCH_QUERY = gql`
-  query getUser($search: String!) {
+  query getUser($search: String!, $first: Int!, $skip: Int!) {
     user(id: $search) {
       id
       totalBorrowed
@@ -12,22 +13,47 @@ const SEARCH_QUERY = gql`
       totalSupplied
       totalWithdrawn
       flashLoanCount
+      transactions(orderDirection: asc, first: $first, skip: $skip) {
+        id
+        amount
+        eventType
+        reserve
+        timestamp
+        transactionHash
+      }
     }
   }
 `;
 
+interface UserTransaction {
+  id: string;
+  amount: string;
+  eventType: string;
+  reserve: string;
+  timestamp: string;
+  transactionHash: string;
+}
+
 interface User {
-  id: string,
-  totalSupplied: string,
-  totalBorrowed: string,
-  totalRepaid: string
+  id: string;
+  totalSupplied: string;
+  totalBorrowed: string;
+  totalRepaid: string;
+  totalLiquidated: string;
+  totalWithdrawn: string;
+  flashLoanCount: number;
+  transactions: UserTransaction[];
 }
 
 interface SearchResults {
-  user: User | null
+  user: User | null;
 }
 
-export async function fetchData(searchQuery: string): Promise<SearchResults | null> {
+export async function fetchData(
+  searchQuery: string,
+  first: number = 10,
+  skip: number = 0
+): Promise<SearchResults | null> {
   if (!searchQuery) return null; // Prevent unnecessary fetches
-  return await request(url, SEARCH_QUERY, { search: searchQuery });
+  return await request(url, SEARCH_QUERY, { search: searchQuery, first, skip });
 }
