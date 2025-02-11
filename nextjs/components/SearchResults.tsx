@@ -3,6 +3,8 @@
 import { fetchData } from "@/utils/getRequestData";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
+import TotalStatistics from "./TotalStatistics";
+import TransactionTable from "./TransactionTable";
 
 interface SearchResultsProps {
   searchQuery: string;
@@ -17,9 +19,8 @@ export default function SearchResults({ searchQuery }: SearchResultsProps) {
 
   return (
     <div className="w-full border border-lightgrey p-4 rounded mt-4">
-      <h2 className="text-lg font-semibold">Search Results</h2>
+      <h2 className="text-2xl font-semibold lg:mb-6 mb-2 underline">Search Results</h2>
 
-      {/* Smooth Transitions using AnimatePresence */}
       <AnimatePresence mode="wait">
         {isLoading && (
           <motion.p
@@ -45,7 +46,7 @@ export default function SearchResults({ searchQuery }: SearchResultsProps) {
           </motion.p>
         )}
 
-        {!isLoading && !error && data && (
+        {!isLoading && !error && data && data.user &&(
           <motion.pre
             key="data"
             initial={{ opacity: 0, y: 10 }}
@@ -53,7 +54,8 @@ export default function SearchResults({ searchQuery }: SearchResultsProps) {
             exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.3 }}
           >
-            {JSON.stringify(data, null, 2)}
+            <TotalStatistics user={data.user}/>
+            <TransactionTable transactions={data.user.transactions} />
           </motion.pre>
         )}
       </AnimatePresence>
