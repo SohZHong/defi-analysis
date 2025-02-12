@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import TotalStatistics from "./TotalStatistics";
 import TransactionTable from "./TransactionTable";
+import DailyStatsChart from "./DailyStatsChart";
 
 interface SearchResultsProps {
   searchQuery: string;
@@ -56,6 +57,7 @@ export default function SearchResults({ searchQuery }: SearchResultsProps) {
           >
             <TotalStatistics user={data.user}/>
             <TransactionTable transactions={data.user.transactions} />
+            <DailyStatsChart dailyStats={data.dailyStats_collection}/>
           </motion.pre>
         )}
       </AnimatePresence>

@@ -22,11 +22,6 @@ const SEARCH_QUERY = gql`
         transactionHash
       }
     }
-  }
-`;
-
-const DAILY_STATS_SEARCH_QUERY = gql`
-  query getUserDailyStats($search: String!) {
     dailyStats_collection(
       interval: day
       where: {user: $search}
@@ -38,7 +33,22 @@ const DAILY_STATS_SEARCH_QUERY = gql`
       totalWithdrawn
     }
   }
-`
+`;
+
+// const DAILY_STATS_SEARCH_QUERY = gql`
+//   query getUserDailyStats($search: String!) {
+//     dailyStats_collection(
+//       interval: day
+//       where: {user: $search}
+//     ) {
+//       id
+//       timestamp
+//       totalSupplied
+//       totalBorrowed
+//       totalWithdrawn
+//     }
+//   }
+// `
 
 export interface UserTransaction {
   id: string;
@@ -62,6 +72,7 @@ export interface User {
 
 export interface SearchResults {
   user: User | null;
+  dailyStats_collection: DailyStats[]
 }
 
 export interface DailyStats {
@@ -85,9 +96,9 @@ export async function fetchData(
   return await request(url, SEARCH_QUERY, { search: searchQuery, first, skip });
 }
 
-export async function fetchDailyStats(
-  userAddress: string
-): Promise<DailyStatsSearchResults | null> {
-  if (!userAddress) return null;
-  return await request(url, DAILY_STATS_SEARCH_QUERY, { search: userAddress} );
-}
+// export async function fetchDailyStats(
+//   userAddress: string
+// ): Promise<DailyStatsSearchResults | null> {
+//   if (!userAddress) return null;
+//   return await request(url, DAILY_STATS_SEARCH_QUERY, { search: userAddress} );
+// }
