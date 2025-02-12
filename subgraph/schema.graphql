@@ -25,7 +25,7 @@ type DailyStats @aggregation(intervals: ["day"], source: "Transaction") {
   id: Int8!
   user: User!
   timestamp: Timestamp!
-  totalSupplied: BigInt! @aggregate(fn: "sum", arg: "amount _ (eventType = 'Supply' and 1 or 0)")
+  totalSupplied: BigInt! @aggregate(fn: "sum", arg: "case when eventType = 'Supply' then amount else 0 end")
   totalBorrowed: BigInt! @aggregate(fn: "sum", arg: "amount _ (eventType = 'Borrow' and 1 or 0)")
-  totalWithdrawn: BigInt! @aggregate(fn: "sum", arg: "amount _ (eventType = 'Withdraw' and 1 or 0)")
+  totalWithdrawn: BigInt! @aggregate(fn: "sum", arg: "amount _ (eventType 'Withdraw' and 1 or 0)")
 }
