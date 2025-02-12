@@ -1,8 +1,8 @@
 "use client";
 
 import { CustomSearchbar } from "@/components/Searchbar";
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion"; // Import motion
+import { useState } from "react";
+import { motion } from "framer-motion";
 import SearchResults from "@/components/SearchResults";
 
 export default function Home() {
