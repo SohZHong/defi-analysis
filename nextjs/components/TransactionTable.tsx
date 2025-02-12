@@ -44,25 +44,35 @@ export default function TransactionTable({
   transactions,
 }: TransactioTableProps) {
   return (
-    <div className="overflow-x-auto w-full my-3">
-      <Table aria-label="User Transaction Table" className="p-0 min-w-full">
-        <TableHeader columns={columns}>
-          {(column) => (
-            <TableColumn className="text-left font-bold underline underline-offset-1" key={column.key}>{column.label}</TableColumn>
-          )}
-        </TableHeader>
-        <TableBody items={transactions}>
-          {(item) => (
-            <TableRow key={item.eventType.concat(item.transactionHash)}>
-              {(columnKey) => (
-                <TableCell className="pr-2 whitespace-nowrap">
-                  {getKeyValue(item, columnKey)}
-                </TableCell>
+    <div>
+      <h2 className="mt-8 font-semibold underline text-xl">All Transactions</h2>
+      <div className="w-full my-3 overflow-x-auto bg-lightgrey2 border border-lightgrey3 rounded-2xl">
+        <div className="min-w-max">
+          <Table aria-label="User Transaction Table" className="min-w-full">
+            <TableHeader columns={columns}>
+              {(column) => (
+                <TableColumn
+                  className="underline underline-offset-2 py-2 text-left font-bold"
+                  key={column.key}
+                >
+                  {column.label}
+                </TableColumn>
               )}
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            </TableHeader>
+            <TableBody items={transactions}>
+              {(item) => (
+                <TableRow key={item.eventType.concat(item.transactionHash)}>
+                  {(columnKey) => (
+                    <TableCell className="pr-2 whitespace-nowrap font-semibold">
+                      {getKeyValue(item, columnKey)}
+                    </TableCell>
+                  )}
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
     </div>
   );
 }
