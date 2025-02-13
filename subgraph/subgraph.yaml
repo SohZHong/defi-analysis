@@ -3,8 +3,8 @@ indexerHints:
   prune: auto
 schema:
   file: ./schema.graphql
-features:
-  - grafting
+# features:
+#   - grafting
 # graft:
 #   base: QmPqzuW6brL9UqE8xfaNTXZXHw3o3ewMayzgm5aAFJsx1y # Deployment ID of base subgraph
 #   block: 21827000 # End Block number till the data should be copied from base subgraph

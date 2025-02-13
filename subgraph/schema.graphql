@@ -1,3 +1,12 @@
+enum EventType {
+  Borrow
+  FlashLoan
+  Liquidation
+  Repay
+  Supply
+  Withdraw
+}
+
 type User @entity {
   id: Bytes!
   totalSupplied: BigInt! # uint256
@@ -6,26 +15,138 @@ type User @entity {
   totalWithdrawn: BigInt! # uint256
   totalLiquidated: BigInt! # uint256
   flashLoanCount: Int! # uint8
-  transactions: [Transaction!]! @derivedFrom(field: "user")
+  transactions: [BaseTransaction!]! @derivedFrom(field: "user")
   useReserveAsCollateral: Boolean!
 }
 
-type Transaction @entity(immutable: true, timeseries: true) {
+# Generic Transaction Entity
+interface BaseTransaction @entity(timeseries: true) {
   id: Int8!
-  user: User! # relationship with the 'User' entity
-  eventType: String!  # "Supply", "Borrow", "Withdraw"
-  amount: BigInt!
+  user: User!
+  eventType: EventType!
+  amount: BigInt! # uint256
   reserve: Bytes!
+  blockNumber: BigInt!
+  timestamp: Timestamp!
+  transactionHash: Bytes!
+}
+
+type BorrowTransaction implements BaseTransaction @entity(timeseries: true) {
+  id: Int8!
+  user: User!
+  eventType: EventType!
+  amount: BigInt! # uint256
+  reserve: Bytes!
+  onBehalfOf: Bytes! # address
+  interestRateMode: Int! # uint8
+  borrowRate: BigInt! # uint256
+  referralCode: Int! # uint16
+  blockNumber: BigInt!
+  timestamp: Timestamp!
+  transactionHash: Bytes!
+}
+
+type FlashLoanTransaction implements BaseTransaction @entity(timeseries: true) {
+  id: Int8!
+  user: User!
+  eventType: EventType!
+  amount: BigInt! # uint256
+  reserve: Bytes!
+  target: Bytes! # address
+  interestRateMode: Int! #uint8
+  premium: BigInt! # uint256
+  referralCode: Int! # uint16
+  blockNumber: BigInt!
+  timestamp: Timestamp!
+  transactionHash: Bytes!
+}
+
+type LiquidationTransaction implements BaseTransaction @entity(timeseries: true) {
+  id: Int8!
+  user: User!
+  eventType: EventType!
+  amount: BigInt! # uint256
+  reserve: Bytes!
+  debtAsset: Bytes! # address
+  debtToCover: BigInt! # uint256
+  liquidator: Bytes! # address
+  receiveAToken: Boolean! # bool
+  blockNumber: BigInt!
+  timestamp: Timestamp!
+  transactionHash: Bytes!
+}
+
+type RepayTransaction implements BaseTransaction @entity(timeseries: true) {
+  id: Int8!
+  user: User!
+  eventType: EventType!
+  amount: BigInt! # uint256
+  reserve: Bytes!
+  repayer: Bytes! # address
+  useATokens: Boolean! # bool
+  blockNumber: BigInt!
+  timestamp: Timestamp!
+  transactionHash: Bytes!
+}
+
+type SupplyTransaction implements BaseTransaction @entity(timeseries: true) {
+  id: Int8!
+  user: User!
+  eventType: EventType!
+  amount: BigInt! # uint256
+  reserve: Bytes! # address
+  onBehalfOf: Bytes! # address
+  referralCode: Int! # uint16
+  blockNumber: BigInt!
+  timestamp: Timestamp!
+  transactionHash: Bytes!
+}
+
+type WithdrawTransaction implements BaseTransaction @entity(timeseries: true) {
+  id: Int8!
+  user: User!
+  eventType: EventType!
+  amount: BigInt! # uint256
+  reserve: Bytes!
+  to: Bytes! # address
+  blockNumber: BigInt!
   timestamp: Timestamp!
   transactionHash: Bytes!
 }
 
 # Record statistics from daily transactions
-type DailyStats @aggregation(intervals: ["day"], source: "Transaction") {
+
+type DailyBorrowStats @aggregation(intervals: ["day"], source: "BorrowTransaction") {
   id: Int8!
   user: User!
   timestamp: Timestamp!
-  totalSupplied: BigInt! @aggregate(fn: "sum", arg: "case when eventType = 'Supply' then amount else 0 end")
-  totalBorrowed: BigInt! @aggregate(fn: "sum", arg: "amount _ (eventType = 'Borrow' and 1 or 0)")
-  totalWithdrawn: BigInt! @aggregate(fn: "sum", arg: "amount _ (eventType 'Withdraw' and 1 or 0)")
+  totalBorrowed: BigInt! @aggregate(fn: "sum", arg: "amount")
+}
+
+type DailySupplyStats @aggregation(intervals: ["day"], source: "SupplyTransaction") {
+  id: Int8!
+  user: User!
+  timestamp: Timestamp!
+  totalSupplied: BigInt! @aggregate(fn: "sum", arg: "amount")
+}
+
+type DailyWithdrawStats @aggregation(intervals: ["day"], source: "WithdrawTransaction") {
+  id: Int8!
+  user: User!
+  timestamp: Timestamp!
+  totalWithdrawn: BigInt! @aggregate(fn: "sum", arg: "amount")
+}
+
+type DailyLiquidationStats @aggregation(intervals: ["day"], source: "LiquidationTransaction") {
+  id: Int8!
+  user: User!
+  timestamp: Timestamp!
+  totalLiquidated: BigInt! @aggregate(fn: "sum", arg: "amount")
+}
+
+type DailyRepayStats @aggregation(intervals: ["day"], source: "RepayTransaction") {
+  id: Int8!
+  user: User!
+  timestamp: Timestamp!
+  totalRepaid: BigInt! @aggregate(fn: "sum", arg: "amount")
 }
