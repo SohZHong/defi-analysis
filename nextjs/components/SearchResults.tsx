@@ -1,6 +1,6 @@
 "use client";
 
-import { fetchData } from "@/utils/getRequestData";
+import { fetchDailyStats, fetchData } from "@/utils/getRequestData";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import TotalStatistics from "./TotalStatistics";
@@ -12,18 +12,34 @@ interface SearchResultsProps {
 }
 
 export default function SearchResults({ searchQuery }: SearchResultsProps) {
-  const { data, isLoading, error } = useQuery({
+  const {
+    data: userData,
+    isLoading: isUserLoading,
+    error: userError,
+  } = useQuery({
     queryKey: ["searchResults", searchQuery],
     queryFn: () => fetchData(searchQuery), // Calls the server function
     enabled: !!searchQuery, // Only fetch when searchQuery exists
   });
 
+  const {
+    data: dailyData,
+    isLoading: isDailyStatsLoading,
+    error: dailyStatsError,
+  } = useQuery({
+    queryKey: ["searchResults", searchQuery],
+    queryFn: () => fetchDailyStats(searchQuery), // Calls the server function
+    enabled: !!searchQuery, // Only fetch when searchQuery exists
+  });
+  
   return (
     <div className="w-full border border-lightgrey p-4 rounded mt-4">
-      <h2 className="text-2xl font-semibold lg:mb-6 mb-2 underline">Search Results</h2>
+      <h2 className="text-2xl font-semibold lg:mb-6 mb-2 underline">
+        Search Results
+      </h2>
 
       <AnimatePresence mode="wait">
-        {isLoading && (
+        {(isUserLoading || isDailyStatsLoading) && (
           <motion.p
             key="loading"
             initial={{ opacity: 0 }}
@@ -35,7 +51,7 @@ export default function SearchResults({ searchQuery }: SearchResultsProps) {
           </motion.p>
         )}
 
-        {error && (
+        {(userError || dailyStatsError) && (
           <motion.p
             key="error"
             initial={{ opacity: 0, y: -10 }}
@@ -47,19 +63,29 @@ export default function SearchResults({ searchQuery }: SearchResultsProps) {
           </motion.p>
         )}
 
-        {!isLoading && !error && data && data.user &&(
-          <motion.pre
-            key="data"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.3 }}
-          >
-            <TotalStatistics user={data.user}/>
-            <TransactionTable transactions={data.user.transactions} />
-            <DailyStatsChart dailyStats={data.dailyStats_collection}/>
-          </motion.pre>
-        )}
+        {!(isUserLoading || isDailyStatsLoading) &&
+          !(userError || dailyStatsError) &&
+          userData &&
+          userData.user &&
+          dailyData && (
+            <motion.pre
+              key="data"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.3 }}
+            >
+              <TotalStatistics user={userData.user} />
+              <TransactionTable transactions={userData.user.transactions} />
+              <DailyStatsChart
+                dailyBorrowStats={dailyData.dailyBorrowStats_collection}
+                dailyLiquidationStats={dailyData.dailyBorrowStats_collection}
+                dailyRepayStats={dailyData.dailyRepayStats_collection}
+                dailySupplyStats={dailyData.dailySupplyStats_collection}
+                dailyWithdrawStats={dailyData.dailyWithdrawStats_collection}
+              />
+            </motion.pre>
+          )}
       </AnimatePresence>
     </div>
   );

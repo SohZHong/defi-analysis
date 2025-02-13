@@ -1,54 +1,61 @@
 import { gql, request } from "graphql-request";
 
 const url =
-  "https://api.studio.thegraph.com/query/90479/defi-analysis/version/latest";
+  "https://api.studio.thegraph.com/query/90479/defi-analysis/version/v0.0.1";
 
 const SEARCH_QUERY = gql`
   query getUser($search: String!, $first: Int!, $skip: Int!) {
     user(id: $search) {
       id
+      flashLoanCount
       totalBorrowed
       totalLiquidated
       totalRepaid
       totalSupplied
       totalWithdrawn
-      flashLoanCount
+      useReserveAsCollateral
       transactions(orderDirection: asc, first: $first, skip: $skip) {
-        id
         amount
+        blockNumber
         eventType
+        id
         reserve
         timestamp
         transactionHash
       }
     }
-    dailyStats_collection(
-      interval: day
-      where: {user: $search}
-    ) {
-      id
-      timestamp
-      totalSupplied
-      totalBorrowed
-      totalWithdrawn
-    }
   }
 `;
 
-// const DAILY_STATS_SEARCH_QUERY = gql`
-//   query getUserDailyStats($search: String!) {
-//     dailyStats_collection(
-//       interval: day
-//       where: {user: $search}
-//     ) {
-//       id
-//       timestamp
-//       totalSupplied
-//       totalBorrowed
-//       totalWithdrawn
-//     }
-//   }
-// `
+const DAILY_STATS_SEARCH_QUERY = gql`
+  query getUserDailyStats($search: String!) {
+    dailyBorrowStats_collection(interval: day, where: { user: $search }) {
+      timestamp
+      total
+      id
+    }
+    dailyLiquidationStats_collection(interval: day, where: { user: $search }) {
+      timestamp
+      total
+      id
+    }
+    dailyRepayStats_collection(interval: day, where: { user: $search }) {
+      timestamp
+      total
+      id
+    }
+    dailySupplyStats_collection(interval: day, where: { user: $search }) {
+      timestamp
+      total
+      id
+    }
+    dailyWithdrawStats_collection(interval: day, where: { user: $search }) {
+      timestamp
+      total
+      id
+    }
+  }
+`;
 
 export interface UserTransaction {
   id: string;
@@ -72,19 +79,20 @@ export interface User {
 
 export interface SearchResults {
   user: User | null;
-  dailyStats_collection: DailyStats[]
 }
 
 export interface DailyStats {
-  id: string,
-  timestamp: string,
-  totalSupplied: string,
-  totalBorrowed: string,
-  totalWithdrawn: string
+  id: string;
+  total: string;
+  timestamp: string;
 }
 
 export interface DailyStatsSearchResults {
-  dailyStats_collection: DailyStats[]
+  dailyBorrowStats_collection: DailyStats[];
+  dailyLiquidationStats_collection: DailyStats[];
+  dailyRepayStats_collection: DailyStats[];
+  dailySupplyStats_collection: DailyStats[];
+  dailyWithdrawStats_collection: DailyStats[];
 }
 
 export async function fetchData(
@@ -92,13 +100,49 @@ export async function fetchData(
   first: number = 10,
   skip: number = 0
 ): Promise<SearchResults | null> {
-  if (!searchQuery) return null; // Prevent unnecessary fetches
-  return await request(url, SEARCH_QUERY, { search: searchQuery, first, skip });
+  if (!searchQuery) {
+    console.warn("fetchData: searchQuery is empty, returning null");
+    return null;
+  }
+
+  try {
+    console.log(`Fetching user data for: ${searchQuery}`);
+
+    const response: SearchResults = await request(url, SEARCH_QUERY, {
+      search: searchQuery,
+      first,
+      skip,
+    });
+
+    console.log("GraphQL Response:", response);
+
+    if (!response || !response.user) {
+      console.error("fetchData: No user found in response!", response);
+      return null;
+    }
+
+    return response;
+  } catch (error) {
+    console.error("GraphQL Request Error:", error);
+    return null;
+  }
 }
 
-// export async function fetchDailyStats(
-//   userAddress: string
-// ): Promise<DailyStatsSearchResults | null> {
-//   if (!userAddress) return null;
-//   return await request(url, DAILY_STATS_SEARCH_QUERY, { search: userAddress} );
-// }
+export async function fetchDailyStats(
+  searchQuery: string
+): Promise<DailyStatsSearchResults | null> {
+  if (!searchQuery) return null;
+
+  try {
+    const response = await request(url, DAILY_STATS_SEARCH_QUERY, {
+      search: searchQuery,
+    });
+    console.log(response);
+    console.log("GraphQL Response:", response); // Debugging log
+
+    return response as DailyStatsSearchResults; // Ensure you're returning the correct data format
+  } catch (error) {
+    console.error("GraphQL Request Error:", error); // Catch errors
+    return null; // Return null on failure
+  }
+}

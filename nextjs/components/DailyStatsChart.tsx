@@ -19,46 +19,109 @@ ChartJS.register(
 );
 
 interface DailyStatsChartProps {
-  dailyStats: DailyStats[];
+  dailyBorrowStats: DailyStats[];
+  dailyLiquidationStats: DailyStats[];
+  dailyRepayStats: DailyStats[];
+  dailySupplyStats: DailyStats[];
+  dailyWithdrawStats: DailyStats[];
 }
 
-export default function DailyStatsChart({ dailyStats }: DailyStatsChartProps) {
-  const chartData = dailyStats.map((dailyStat) => {
-    console.log(dailyStat.timestamp);
-    const convertedTimestamp = new Date(Number(dailyStat.timestamp) / 1_000);
-    console.log(convertedTimestamp);
-    const formattedDate = convertedTimestamp.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
-    console.log(formattedDate)
-    return {
-      date: formattedDate,
-      totalBorrowed: ethers.formatEther(BigInt(dailyStat.totalBorrowed)),
-      totalSupplied: ethers.formatEther(BigInt(dailyStat.totalSupplied)),
-      totalWithdrawn: ethers.formatEther(BigInt(dailyStat.totalWithdrawn)),
-    };
-  })
+const convertTimestamp = (timestamp: string): string => {
+  return new Date(Number(timestamp) / 1_000).toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+};
+
+const convertEther = (amount: string) => {
+  return ethers.formatEther(BigInt(amount));
+};
+
+const mapDailyStats = (stats: DailyStats[]) => {
+  if (stats.length === 0) return [];
+  return stats.map((stat) => ({
+    date: convertTimestamp(stat.timestamp),
+    total: convertEther(stat.total),
+  }));
+};
+
+export default function DailyStatsChart({
+  dailyBorrowStats,
+  dailyLiquidationStats,
+  dailyRepayStats,
+  dailySupplyStats,
+  dailyWithdrawStats,
+}: DailyStatsChartProps) {
+  const borrowData = mapDailyStats(dailyBorrowStats);
+  const supplyData = mapDailyStats(dailySupplyStats);
+  const withdrawData = mapDailyStats(dailyWithdrawStats);
+  const liquidatedData = mapDailyStats(dailyLiquidationStats);
+  const repayData = mapDailyStats(dailyRepayStats);
+
+  // Ensure unique dates
+  const labels = [
+    ...new Set(
+      [...borrowData, ...supplyData, ...withdrawData, ...liquidatedData, ...repayData].map((d) => d.date)
+    ),
+  ];
+
+  // Filter out empty datasets
+  const filteredDataSets = [
+    borrowData.length > 0
+      ? {
+          label: "Total Borrowed",
+          data: borrowData.map((d) => d.total),
+          borderColor: "#8884d8",
+          fill: false,
+        }
+      : null,
+    supplyData.length > 0
+      ? {
+          label: "Total Supplied",
+          data: supplyData.map((d) => d.total),
+          borderColor: "#82ca9d",
+          fill: false,
+        }
+      : null,
+    withdrawData.length > 0
+      ? {
+          label: "Total Withdrawn",
+          data: withdrawData.map((d) => d.total),
+          borderColor: "#ffc658",
+          fill: false,
+        }
+      : null,
+      liquidatedData.length > 0
+      ? {
+          label: "Total Liquidated",
+          data: liquidatedData.map((d) => d.total),
+          borderColor: "#ffc658",
+          fill: false,
+        }
+      : null,
+      repayData.length > 0
+      ? {
+          label: "Total Repaid",
+          data: repayData.map((d) => d.total),
+          borderColor: "#58ff73",
+          fill: false,
+        }
+      : null,
+  ].filter(
+    (
+      dataset
+    ): dataset is {
+      label: string;
+      data: string[];
+      borderColor: string;
+      fill: boolean;
+    } => dataset !== null
+  ); // Ensures correct dataset type
 
   const data = {
-    labels: chartData.map((d) => d.date),
-    datasets: [
-      {
-        label: "Total Borrowed",
-        data: chartData.map((d) => d.totalBorrowed),
-        borderColor: "#8884d8",
-        fill: false,
-      },
-      {
-        label: "Total Supplied",
-        data: chartData.map((d) => d.totalSupplied),
-        borderColor: "#82ca9d",
-        fill: false,
-      },
-      {
-        label: "Total Withdrawn",
-        data: chartData.map((d) => d.totalWithdrawn),
-        borderColor: "#ffc658",
-        fill: false,
-      },
-    ],
+    labels,
+    datasets: filteredDataSets,
   };
 
   return <Line data={data} />;
