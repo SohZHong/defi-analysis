@@ -13,25 +13,26 @@ interface SearchResultsProps {
 
 export default function SearchResults({ searchQuery }: SearchResultsProps) {
   const {
-    data: userData,
-    isLoading: isUserLoading,
-    error: userError,
-  } = useQuery({
-    queryKey: ["searchResults", searchQuery],
-    queryFn: () => fetchData(searchQuery), // Calls the server function
-    enabled: !!searchQuery, // Only fetch when searchQuery exists
-  });
-
-  const {
     data: dailyData,
     isLoading: isDailyStatsLoading,
     error: dailyStatsError,
   } = useQuery({
-    queryKey: ["searchResults", searchQuery],
+    queryKey: ["userData", searchQuery],
     queryFn: () => fetchDailyStats(searchQuery), // Calls the server function
     enabled: !!searchQuery, // Only fetch when searchQuery exists
   });
-  
+  console.log(dailyData);
+
+  const {
+    data: userData,
+    isLoading: isUserLoading,
+    error: userError,
+  } = useQuery({
+    queryKey: ["dailyStats", searchQuery],
+    queryFn: () => fetchData(searchQuery), // Calls the server function
+    enabled: !!searchQuery, // Only fetch when searchQuery exists
+  });
+
   return (
     <div className="w-full border border-lightgrey p-4 rounded mt-4">
       <h2 className="text-2xl font-semibold lg:mb-6 mb-2 underline">

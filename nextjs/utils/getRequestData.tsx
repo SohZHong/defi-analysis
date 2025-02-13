@@ -1,7 +1,7 @@
 import { gql, request } from "graphql-request";
 
 const url =
-  "https://api.studio.thegraph.com/query/90479/defi-analysis/version/v0.0.1";
+  "https://api.studio.thegraph.com/query/90479/defi-analysis/v0.0.2";
 
 const SEARCH_QUERY = gql`
   query getUser($search: String!, $first: Int!, $skip: Int!) {
@@ -137,7 +137,6 @@ export async function fetchDailyStats(
     const response = await request(url, DAILY_STATS_SEARCH_QUERY, {
       search: searchQuery,
     });
-    console.log(response);
     console.log("GraphQL Response:", response); // Debugging log
 
     return response as DailyStatsSearchResults; // Ensure you're returning the correct data format

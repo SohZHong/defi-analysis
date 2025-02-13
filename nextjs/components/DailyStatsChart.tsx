@@ -62,7 +62,13 @@ export default function DailyStatsChart({
   // Ensure unique dates
   const labels = [
     ...new Set(
-      [...borrowData, ...supplyData, ...withdrawData, ...liquidatedData, ...repayData].map((d) => d.date)
+      [
+        ...borrowData,
+        ...supplyData,
+        ...withdrawData,
+        ...liquidatedData,
+        ...repayData,
+      ].map((d) => d.date)
     ),
   ];
 
@@ -92,7 +98,7 @@ export default function DailyStatsChart({
           fill: false,
         }
       : null,
-      liquidatedData.length > 0
+    liquidatedData.length > 0
       ? {
           label: "Total Liquidated",
           data: liquidatedData.map((d) => d.total),
@@ -100,13 +106,14 @@ export default function DailyStatsChart({
           fill: false,
         }
       : null,
-      repayData.length > 0
+    repayData.length > 0
       ? {
           label: "Total Repaid",
           data: repayData.map((d) => d.total),
           borderColor: "#58ff73",
           fill: false,
         }
+
       : null,
   ].filter(
     (
