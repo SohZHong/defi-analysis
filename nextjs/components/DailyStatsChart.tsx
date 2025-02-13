@@ -7,7 +7,7 @@ import {
   PointElement,
   Tooltip,
 } from "chart.js";
-import { DailyStats, DailyStatsSearchResults } from "@/utils/getRequestData";
+import { DailyStats } from "@/utils/getRequestData";
 import { ethers } from "ethers";
 
 ChartJS.register(
