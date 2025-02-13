@@ -3,11 +3,11 @@ indexerHints:
   prune: auto
 schema:
   file: ./schema.graphql
-# features:
-#   - grafting
-# graft:
-#   base: QmPqzuW6brL9UqE8xfaNTXZXHw3o3ewMayzgm5aAFJsx1y # Deployment ID of base subgraph
-#   block: 21827000 # End Block number till the data should be copied from base subgraph
+features:
+  - grafting
+graft:
+  base: QmXpapsWyEbfMEp1vwUrPAxDsjfJhKv7JQ4HYhLjpyLXh1 # Deployment ID of base subgraph
+  block: 21000000 # End Block number till the data should be copied from base subgraph
 dataSources:
   - kind: ethereum
     name: PoolImplementation
@@ -23,7 +23,18 @@ dataSources:
       entities:
         - User
         - Transaction
-        - DailyStats
+        - BaseTransaction
+        - BorrowTransaction
+        - FlashLoanTransaction
+        - LiquidationTransaction
+        - RepayTransaction
+        - SupplyTransaction
+        - WithdrawTransaction
+        - DailyBorrowStats
+        - DailySupplyStats
+        - DailyWithdrawStats
+        - DailyLiquidationStats
+        - DailyRepayStats
       abis:
         - name: PoolImplementation
           file: ./abis/PoolImplementation.json
