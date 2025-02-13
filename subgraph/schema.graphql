@@ -120,33 +120,33 @@ type DailyBorrowStats @aggregation(intervals: ["day"], source: "BorrowTransactio
   id: Int8!
   user: User!
   timestamp: Timestamp!
-  totalBorrowed: BigInt! @aggregate(fn: "sum", arg: "amount")
+  total: BigInt! @aggregate(fn: "sum", arg: "amount")
 }
 
 type DailySupplyStats @aggregation(intervals: ["day"], source: "SupplyTransaction") {
   id: Int8!
   user: User!
   timestamp: Timestamp!
-  totalSupplied: BigInt! @aggregate(fn: "sum", arg: "amount")
+  total: BigInt! @aggregate(fn: "sum", arg: "amount")
 }
 
 type DailyWithdrawStats @aggregation(intervals: ["day"], source: "WithdrawTransaction") {
   id: Int8!
   user: User!
   timestamp: Timestamp!
-  totalWithdrawn: BigInt! @aggregate(fn: "sum", arg: "amount")
+  total: BigInt! @aggregate(fn: "sum", arg: "amount")
 }
 
 type DailyLiquidationStats @aggregation(intervals: ["day"], source: "LiquidationTransaction") {
   id: Int8!
   user: User!
   timestamp: Timestamp!
-  totalLiquidated: BigInt! @aggregate(fn: "sum", arg: "amount")
+  total: BigInt! @aggregate(fn: "sum", arg: "amount")
 }
 
 type DailyRepayStats @aggregation(intervals: ["day"], source: "RepayTransaction") {
   id: Int8!
   user: User!
   timestamp: Timestamp!
-  totalRepaid: BigInt! @aggregate(fn: "sum", arg: "amount")
+  total: BigInt! @aggregate(fn: "sum", arg: "amount")
 }
