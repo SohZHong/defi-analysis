@@ -4,7 +4,7 @@ This subgraph indexes and analyzes user interactions with Aave's lending protoco
 
 By using The Graph Protocol, this subgraph enables efficient querying and retrieval of historical user data. Moreover, it also provides a daily report of user transaction statistics through time-series data, making it useful for DeFi analytics dashboards, research, and portfolio tracking.
 
-[Subgraph Link](https://thegraph.com/studio/subgraph/defi-analysis/playground)
+[Subgraph Link](https://api.studio.thegraph.com/query/90479/defi-analysis/version/latest)
 
 ## 🚀 Features ## 
 - Time-Series Tracking: Captures historical events (`BorrowTransaction`, `RepayTransaction`, etc.) for accurate insights.
@@ -13,7 +13,7 @@ By using The Graph Protocol, this subgraph enables efficient querying and retrie
 - Daily Summaries: Provides `DailyBorrowStats`, `DailySupplyStats`, etc., to track lending activity trends.
 - Collateral Tracking: A simple `useReserveAsCollateral` flag tracks whether users are using assets as collateral.
 
-## 🔍 Schema Overview [Schema](/subgraph/schema.graphql) ##
+## 🔍  [Schema](/subgraph/schema.graphql)  Overview##
 
 1️⃣ **User Balances & Metrics**
 
@@ -58,7 +58,7 @@ To analyze trends over time, **daily aggregated statistics** are stored:
 
 These daily summaries make it easier to track trends (e.g., total borrow volume in the last 30 days).
 
-## 📌 Event Handlers Overview
+## 📌 [Event Handlers](/subgraph/src/mappings.ts) Overview
 
 Each event updates **user balances** and logs a **transaction record**.
 
@@ -270,7 +270,7 @@ export function handleReserveUsedAsCollateralDisabled(event: ReserveUsedAsCollat
 }
 ```
 
-## 📌 Usage Examples ##
+## 📌 Usage Examples [(Playground)](https://api.studio.thegraph.com/query/90479/defi-analysis/version/latest) ##
 
 **Query: Get a User’s Total Borrowed & Repaid**
 ```graphql
