@@ -6,7 +6,59 @@ By using The Graph Protocol, this subgraph enables efficient querying and retrie
 
 [Subgraph Link](https://thegraph.com/studio/subgraph/defi-analysis/playground)
 
-## 📌 Overview of Event Handlers
+## 🚀 Features ## 
+- Time-Series Tracking: Captures historical events (`BorrowTransaction`, `RepayTransaction`, etc.) for accurate insights.
+- Aggregated User Metrics: Tracks `totalBorrowed`, `totalRepaid`, `totalSupplied`, etc., reducing the need for repeated calculations.
+- Optimized Performance: Uses pre-aggregated statistics to minimize query load.
+- Daily Summaries: Provides `DailyBorrowStats`, `DailySupplyStats`, etc., to track lending activity trends.
+- Collateral Tracking: A simple `useReserveAsCollateral` flag tracks whether users are using assets as collateral.
+
+## 🔍 Schema Overview [Schema](/subgraph/schema.graphql) ##
+
+1️⃣ **User Balances & Metrics**
+
+The `User` entity tracks cumulative balances to optimize queries:
+| Field  | Description |
+| ------------- | ------------- |
+| `totalSupplied`  | Total amount deposited by the user |
+| `totalBorrowed`  | Total amount borrowed |
+| `totalRepaid`  | Total amount repaid |
+| `totalWithdrawn`  | Total amount withdrawn |
+| `totalLiquidated`  | Total amount liquidated |
+| `flashLoanCount`  | Number of flash loans taken |
+
+
+2️⃣ **Transaction Entities**
+
+Each **financial event** (borrow, supply, repay, etc.) is logged as an entity for detailed historical tracking.
+| Transaction Type  | Purpose |
+| ------------- | ------------- |
+| `BorrowTransaction`  | Tracks user borrow events |
+| `RepayTransaction`  | Logs repayment activities |
+| `SupplyTransaction`  | Captures asset deposits into the protocol |
+| `WithdrawTransaction`  | Records user withdrawals |
+| `LiquidationTransaction`  | Tracks liquidations and their impact |
+| `FlashLoanTransaction`  | Monitors flash loans and fees|
+
+Each transaction includes:
+- Amount, Timestamp, Block Number, Transaction Hash
+- Additional details (e.g., borrowRate, onBehalfOf, liquidator, etc.)
+
+
+3️⃣ **Daily Aggregations**
+
+To analyze trends over time, **daily aggregated statistics** are stored:
+|  Aggregation Type  | Source Entity | Function |
+| ------------- | ------------- | ------------- |
+| `DailyBorrowStats`  | `BorrowTransaction` | Sum of borrow amounts per day |
+| `DailySupplyStats`  | `SupplyTransaction` | Sum of supplied amounts per day |
+| `DailyWithdrawStats`  | `WithdrawTransaction` | Sum of withdrawals per day |
+| `DailyLiquidationStats`  | `LiquidationTransaction` | Sum of liquidated amounts per day |
+| `DailyRepayStats`  | `RepayTransaction` | Sum of repayments per day |
+
+These daily summaries make it easier to track trends (e.g., total borrow volume in the last 30 days).
+
+## 📌 Event Handlers Overview
 
 Each event updates **user balances** and logs a **transaction record**.
 
@@ -32,40 +84,57 @@ function loadUser(id: Bytes): User {
 
 2️⃣ **Borrow Event**
 
-Increases `totalBorrowed` when a user **borrows** funds.
+- Increases `totalBorrowed` when a user **borrows** funds.
+- Registers a `BorrowTransaction` entity.
 
 ```typescript
 export function handleBorrow(event: BorrowEvent): void {
   let user = loadUser(event.params.user);
+  // Update total borrowed
   user.totalBorrowed = user.totalBorrowed.plus(event.params.amount);
   user.save();
 
-  let tx = new Transaction(event.transaction.hash.concatI32(event.logIndex.toI32()).toHex());
+  // Save Transaction
+  let tx = new BorrowTransaction(
+    event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
+  );
   tx.user = user.id;
   tx.eventType = "Borrow";
   tx.reserve = event.params.reserve;
   tx.amount = event.params.amount;
+  tx.onBehalfOf = event.params.onBehalfOf;
+  tx.interestRateMode = event.params.interestRateMode;
+  tx.borrowRate = event.params.borrowRate;
+  tx.referralCode = event.params.referralCode;
+  tx.blockNumber = event.block.number;
   tx.timestamp = event.block.timestamp.toI64();
   tx.transactionHash = event.transaction.hash;
+
   tx.save();
 }
 ```
 
 **3️⃣ Supply Event**
-
-Increases `totalSupplied` when a user **deposits** funds.
+- Increases `totalSupplied` when a user **deposits** funds.
+- Registers a `SupplyTransaction` entity.
 
 ```typescript
 export function handleSupply(event: SupplyEvent): void {
   let user = loadUser(event.params.user);
+  // Update total supplied
   user.totalSupplied = user.totalSupplied.plus(event.params.amount);
   user.save();
 
-  let tx = new Transaction(event.transaction.hash.concatI32(event.logIndex.toI32()).toHex());
+  let tx = new SupplyTransaction(
+    event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
+  );
   tx.user = user.id;
   tx.eventType = "Supply";
   tx.reserve = event.params.reserve;
   tx.amount = event.params.amount;
+  tx.onBehalfOf = event.params.onBehalfOf;
+  tx.referralCode = event.params.referralCode;
+  tx.blockNumber = event.block.number;
   tx.timestamp = event.block.timestamp.toI64();
   tx.transactionHash = event.transaction.hash;
   tx.save();
@@ -73,20 +142,25 @@ export function handleSupply(event: SupplyEvent): void {
 ```
 
 **4️⃣ Withdraw Event**
-
-Increases `totalWithdrawn` when a user **withdraws** funds.
+- Increases `totalWithdrawn` when a user **withdraws** funds.
+- Registers a `WithdrawTransaction` entity.
 
 ```typescript
 export function handleWithdraw(event: WithdrawEvent): void {
   let user = loadUser(event.params.user);
+  // Update total withdrawn
   user.totalWithdrawn = user.totalWithdrawn.plus(event.params.amount);
   user.save();
 
-  let tx = new Transaction(event.transaction.hash.concatI32(event.logIndex.toI32()).toHex());
+  let tx = new WithdrawTransaction(
+    event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
+  );
   tx.user = user.id;
   tx.eventType = "Withdraw";
   tx.reserve = event.params.reserve;
   tx.amount = event.params.amount;
+  tx.to = event.params.to;
+  tx.blockNumber = event.block.number;
   tx.timestamp = event.block.timestamp.toI64();
   tx.transactionHash = event.transaction.hash;
   tx.save();
@@ -94,20 +168,26 @@ export function handleWithdraw(event: WithdrawEvent): void {
 ```
 
 **5️⃣ Repay Event**
-
-Increases `totalRepaid` when a user **repays borrowed** funds.
+- Increases `totalRepaid` when a user **repays borrowed** funds.
+- Registers a `RepayTransaction` entity.
 
 ```typescript
 export function handleRepay(event: RepayEvent): void {
   let user = loadUser(event.params.user);
+  // Update total repaid
   user.totalRepaid = user.totalRepaid.plus(event.params.amount);
   user.save();
 
-  let tx = new Transaction(event.transaction.hash.concatI32(event.logIndex.toI32()).toHex());
+  let tx = new RepayTransaction(
+    event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
+  );
   tx.user = user.id;
   tx.eventType = "Repay";
   tx.reserve = event.params.reserve;
   tx.amount = event.params.amount;
+  tx.repayer = event.params.repayer;
+  tx.useATokens = event.params.useATokens;
+  tx.blockNumber = event.block.number;
   tx.timestamp = event.block.timestamp.toI64();
   tx.transactionHash = event.transaction.hash;
   tx.save();
@@ -115,18 +195,28 @@ export function handleRepay(event: RepayEvent): void {
 ```
 
 **6️⃣ Flash Loan Event**
-	•	Increases `flashLoanCount` when a user **takes a flash loan**.
-	•	Does not affect balances (since flash loans are repaid immediately).
+- Increases `flashLoanCount` when a user **takes a flash loan**.
+- Does not affect balances (since flash loans are repaid immediately).
+- Registers a `FlashLoanTransaction` entity.
  ```typescript
 export function handleFlashLoan(event: FlashLoanEvent): void {
   let user = loadUser(event.params.initiator);
+  // Increment flash loan by 1
   user.flashLoanCount += 1;
   user.save();
 
-  let tx = new Transaction(event.transaction.hash.concatI32(event.logIndex.toI32()).toHex());
+  let tx = new FlashLoanTransaction(
+    event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
+  );
   tx.user = user.id;
   tx.eventType = "FlashLoan";
   tx.amount = event.params.amount;
+  tx.reserve = event.params.asset;
+  tx.target = event.params.target;
+  tx.interestRateMode = event.params.interestRateMode;
+  tx.premium = event.params.premium;
+  tx.referralCode = event.params.referralCode;
+  tx.blockNumber = event.block.number;
   tx.timestamp = event.block.timestamp.toI64();
   tx.transactionHash = event.transaction.hash;
   tx.save();
@@ -134,19 +224,28 @@ export function handleFlashLoan(event: FlashLoanEvent): void {
 ```
 
 **7️⃣ Liquidation Event**
-
-Updates `totalLiquidated` when a user is **liquidated**.
+- Updates `totalLiquidated` when a user is **liquidated**.
+- Registers a `LiquidationTransaction` entity.
  ```typescript
 export function handleLiquidationCall(event: LiquidationCallEvent): void {
   let user = loadUser(event.params.user);
-  user.totalLiquidated = user.totalLiquidated.plus(event.params.liquidatedCollateralAmount);
-  user.save();
+  // Update total liquidated
+  user.totalLiquidated = user.totalLiquidated.plus(
+    event.params.liquidatedCollateralAmount
+  );
 
-  let tx = new Transaction(event.transaction.hash.concatI32(event.logIndex.toI32()).toHex());
+  let tx = new LiquidationTransaction(
+    event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
+  );
   tx.user = user.id;
   tx.eventType = "Liquidation";
-  tx.reserve = event.params.collateralAsset;
   tx.amount = event.params.liquidatedCollateralAmount;
+  tx.reserve = event.params.collateralAsset;
+  tx.debtAsset = event.params.debtAsset;
+  tx.debtToCover = event.params.debtToCover;
+  tx.liquidator = event.params.liquidator;
+  tx.receiveAToken = event.params.receiveAToken;
+  tx.blockNumber = event.block.number;
   tx.timestamp = event.block.timestamp.toI64();
   tx.transactionHash = event.transaction.hash;
   tx.save();
@@ -170,24 +269,40 @@ export function handleReserveUsedAsCollateralDisabled(event: ReserveUsedAsCollat
   user.save();
 }
 ```
-## 📊 Time-Series Data & Performance
-This subgraph tracks historical data efficiently by:
-- Using time-series entities (**Transaction** entity).
-- Pre-aggregating user totals (e.g., **totalBorrowed**, **totalRepaid**).
-- Reducing query overhead (e.g., **flashLoanCount** as an integer instead of querying all flash loan transactions).
 
-## 🛠 Key Takeaways
-1.	User Balances:
-- `totalSupplied`, `totalBorrowed`, `totalRepaid`, `totalWithdrawn`, `totalLiquidated`, `flashLoanCount` track cumulative user interactions.
+## 📌 Usage Examples ##
 
-2.	Transactions:
-- Every event logs a `Transaction` entity to allow** time-series tracking**.
+**Query: Get a User’s Total Borrowed & Repaid**
+```graphql
+{
+  user(id: "0x123...") {
+    totalBorrowed
+    totalRepaid
+    useReserveAsCollateral
+  }
+}
+```
+**Query: Fetch All Borrow Transactions for a User**
+```graphql
+{
+  borrowTransactions(where: {user: "0x123..."}) {
+    amount
+    borrowRate
+    timestamp
+    transactionHash
+  }
+}
+```
 
-3.	Performance Optimizations:
-- Instead of querying all past transactions, cumulative fields (totalBorrowed, etc.) store aggregated values.
-
-4.	Collateral Usage Tracking:
-- A simple `useReserveAsCollateral` boolean tracks collateral enable/disable events.
+**Query: Get Daily Borrow Volume**
+```graphql
+{
+  dailyBorrowStats(first: 5, orderBy: timestamp, orderDirection: desc) {
+    total
+    timestamp
+  }
+}
+```
 
 ## 🚧 Challenges and Solutions
 1. Finding the ABI of the Actual Contract
