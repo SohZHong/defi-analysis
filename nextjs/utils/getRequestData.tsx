@@ -121,13 +121,13 @@ export async function fetchUserData(
 
     if (!response || !response.user) {
       console.error('fetchUserData: No user found in response!', response);
-      return null;
+      throw new Error('User not found');
     }
 
     return response;
   } catch (error) {
     console.error('GraphQL Request Error:', error);
-    return null;
+    throw error;
   }
 }
 
@@ -154,16 +154,12 @@ export async function fetchTransactionData(
     );
     console.log('GraphQL Response:', response);
     if (response.baseTransactions.length === 0) {
-      console.error(
-        'fetchTransactionData: No transactions found in response!',
-        response
-      );
-      return null;
+      throw new Error('No data for the user is found');
     }
     return response;
   } catch (error) {
     console.error('GraphQL Request Error:', error);
-    return null;
+    throw error;
   }
 }
 
