@@ -8,7 +8,6 @@ import {
   Tooltip,
 } from 'chart.js';
 import { DailyStats } from '@/utils/getRequestData';
-import { ethers } from 'ethers';
 import { convertTimestamp, convertEther } from '@/utils/parseUtils';
 
 ChartJS.register(

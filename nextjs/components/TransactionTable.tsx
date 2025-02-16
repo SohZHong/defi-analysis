@@ -7,16 +7,11 @@ import {
   TableRow,
   TableCell,
 } from '@heroui/table';
-import {
-  Pagination,
-  PaginationItemRenderProps,
-  PaginationItemType,
-} from '@heroui/pagination';
+import { Pagination } from '@heroui/pagination';
 import { Spinner } from '@heroui/spinner';
 import { Dispatch, SetStateAction } from 'react';
 import React from 'react';
 import { convertEther, convertTimestamp } from '@/utils/parseUtils';
-import { ChevronIcon } from './ChevronIcon';
 
 const columns = [
   {
