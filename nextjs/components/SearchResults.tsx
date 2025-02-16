@@ -77,7 +77,7 @@ export default function UserSearchResults({ searchQuery }: SearchResultsProps) {
   });
 
   return (
-    <div className='w-full border border-lightgrey p-4 rounded-lg mt-4'>
+    <div className='w-full border border-lightgrey p-4 rounded-lg'>
       <AnimatePresence mode='wait'>
         {(isUserLoading || isDailyStatsLoading) && (
           <motion.div
@@ -87,7 +87,9 @@ export default function UserSearchResults({ searchQuery }: SearchResultsProps) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Spinner />
+            <div className='flex justify-center w-full'>
+              <Spinner color='secondary' size='lg' />
+            </div>
           </motion.div>
         )}
 

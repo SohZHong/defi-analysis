@@ -108,7 +108,7 @@ export default function TransactionTable({
             </TableHeader>
             <TableBody
               items={transactions}
-              loadingContent={<Spinner />}
+              loadingContent={<Spinner color='secondary' />}
               loadingState={isLoading ? 'loading' : 'idle'}
             >
               {(item) => (
