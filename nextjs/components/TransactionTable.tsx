@@ -11,6 +11,9 @@ import {
 import { Pagination } from '@heroui/pagination';
 import { Spinner } from '@heroui/spinner';
 import { Dispatch, SetStateAction } from 'react';
+import React from 'react';
+import { ethers } from 'ethers';
+import { convertEther, convertTimestamp } from '@/utils/parseUtils';
 
 const columns = [
   {
@@ -54,6 +57,23 @@ export default function TransactionTable({
   totalPages,
   setPage,
 }: TransactionTableProps) {
+  // Add formatting to individual cells
+  const renderCell = React.useCallback(
+    (transaction: UserTransaction, columnKey: React.Key) => {
+      const cellValue = transaction[columnKey as keyof UserTransaction];
+
+      switch (columnKey) {
+        case 'amount':
+          return convertEther(cellValue);
+        case 'timestamp':
+          return convertTimestamp(cellValue);
+        default:
+          return cellValue;
+      }
+    },
+    []
+  );
+
   return (
     <div>
       <h2 className='mt-8 font-semibold underline text-xl'>All Transactions</h2>
@@ -79,7 +99,7 @@ export default function TransactionTable({
             <TableHeader columns={columns}>
               {(column) => (
                 <TableColumn
-                  className='underline underline-offset-2 py-2 text-left font-bold'
+                  className='py-2 text-left font-black'
                   key={column.key}
                 >
                   {column.label}
@@ -87,17 +107,17 @@ export default function TransactionTable({
               )}
             </TableHeader>
             <TableBody
-              items={transactions ?? []}
+              items={transactions}
               loadingContent={<Spinner />}
               loadingState={isLoading ? 'loading' : 'idle'}
             >
               {(item) => (
                 <TableRow key={item.id}>
                   {(columnKey) => (
-                    <TableCell className='min-w-[150px] max-w-[150px] px-1'>
+                    <TableCell className='min-w-[170px] max-w-[170px] px-1'>
                       <div className='w-full overflow-x-auto'>
                         <div className='min-w-max font-semibold'>
-                          {getKeyValue(item, columnKey)}
+                          {renderCell(item, columnKey)}
                         </div>
                       </div>
                     </TableCell>

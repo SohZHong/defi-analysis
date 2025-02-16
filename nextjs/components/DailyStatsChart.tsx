@@ -1,4 +1,4 @@
-import { Line } from "react-chartjs-2";
+import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   LineElement,
@@ -6,9 +6,10 @@ import {
   LinearScale,
   PointElement,
   Tooltip,
-} from "chart.js";
-import { DailyStats } from "@/utils/getRequestData";
-import { ethers } from "ethers";
+} from 'chart.js';
+import { DailyStats } from '@/utils/getRequestData';
+import { ethers } from 'ethers';
+import { convertTimestamp, convertEther } from '@/utils/parseUtils';
 
 ChartJS.register(
   LineElement,
@@ -25,18 +26,6 @@ interface DailyStatsChartProps {
   dailySupplyStats: DailyStats[];
   dailyWithdrawStats: DailyStats[];
 }
-
-const convertTimestamp = (timestamp: string): string => {
-  return new Date(Number(timestamp) / 1_000).toLocaleDateString("en-US", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
-  });
-};
-
-const convertEther = (amount: string) => {
-  return ethers.formatEther(BigInt(amount));
-};
 
 const mapDailyStats = (stats: DailyStats[]) => {
   if (stats.length === 0) return [];
@@ -76,44 +65,43 @@ export default function DailyStatsChart({
   const filteredDataSets = [
     borrowData.length > 0
       ? {
-          label: "Total Borrowed",
+          label: 'Total Borrowed',
           data: borrowData.map((d) => d.total),
-          borderColor: "#8884d8",
+          borderColor: '#8884d8',
           fill: false,
         }
       : null,
     supplyData.length > 0
       ? {
-          label: "Total Supplied",
+          label: 'Total Supplied',
           data: supplyData.map((d) => d.total),
-          borderColor: "#82ca9d",
+          borderColor: '#82ca9d',
           fill: false,
         }
       : null,
     withdrawData.length > 0
       ? {
-          label: "Total Withdrawn",
+          label: 'Total Withdrawn',
           data: withdrawData.map((d) => d.total),
-          borderColor: "#ffc658",
+          borderColor: '#ffc658',
           fill: false,
         }
       : null,
     liquidatedData.length > 0
       ? {
-          label: "Total Liquidated",
+          label: 'Total Liquidated',
           data: liquidatedData.map((d) => d.total),
-          borderColor: "#ffc658",
+          borderColor: '#ffc658',
           fill: false,
         }
       : null,
     repayData.length > 0
       ? {
-          label: "Total Repaid",
+          label: 'Total Repaid',
           data: repayData.map((d) => d.total),
-          borderColor: "#58ff73",
+          borderColor: '#58ff73',
           fill: false,
         }
-
       : null,
   ].filter(
     (
