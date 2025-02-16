@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #0D0B1D;
-  --foreground: #E1E0E2;
+  --background: #0d0b1d;
+  --foreground: #e1e0e2;
 }
 
 /* @media (prefers-color-scheme: dark) {
@@ -18,9 +18,6 @@ body {
   color: var(--foreground);
   background: var(--background);
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

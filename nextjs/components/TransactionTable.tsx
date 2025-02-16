@@ -65,6 +65,7 @@ export default function TransactionTable({
               totalPages > 1 ? (
                 <div className='flex w-full justify-center'>
                   <Pagination
+                    isCompact
                     showControls
                     color='secondary'
                     page={page}

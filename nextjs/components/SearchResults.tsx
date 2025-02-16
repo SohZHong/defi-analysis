@@ -77,11 +77,7 @@ export default function UserSearchResults({ searchQuery }: SearchResultsProps) {
   });
 
   return (
-    <div className='w-full border border-lightgrey p-4 rounded mt-4'>
-      <h2 className='text-2xl font-semibold lg:mb-6 mb-2 underline'>
-        Search Results
-      </h2>
-
+    <div className='w-full border border-lightgrey p-4 rounded-lg mt-4'>
       <AnimatePresence mode='wait'>
         {(isUserLoading || isDailyStatsLoading) && (
           <motion.div
@@ -117,7 +113,7 @@ export default function UserSearchResults({ searchQuery }: SearchResultsProps) {
           userData.user &&
           dailyData &&
           transactions && (
-            <motion.pre
+            <motion.div
               key='data'
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -139,7 +135,7 @@ export default function UserSearchResults({ searchQuery }: SearchResultsProps) {
                 dailySupplyStats={dailyData.dailySupplyStats_collection}
                 dailyWithdrawStats={dailyData.dailyWithdrawStats_collection}
               />
-            </motion.pre>
+            </motion.div>
           )}
       </AnimatePresence>
     </div>
