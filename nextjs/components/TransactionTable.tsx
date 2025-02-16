@@ -6,14 +6,17 @@ import {
   TableColumn,
   TableRow,
   TableCell,
-  getKeyValue,
 } from '@heroui/table';
-import { Pagination } from '@heroui/pagination';
+import {
+  Pagination,
+  PaginationItemRenderProps,
+  PaginationItemType,
+} from '@heroui/pagination';
 import { Spinner } from '@heroui/spinner';
 import { Dispatch, SetStateAction } from 'react';
 import React from 'react';
-import { ethers } from 'ethers';
 import { convertEther, convertTimestamp } from '@/utils/parseUtils';
+import { ChevronIcon } from './ChevronIcon';
 
 const columns = [
   {
@@ -82,7 +85,7 @@ export default function TransactionTable({
           <Table
             aria-label='User Transactions'
             bottomContent={
-              totalPages > 1 ? (
+              totalPages > 0 ? (
                 <div className='flex w-full justify-center'>
                   <Pagination
                     isCompact
@@ -96,12 +99,9 @@ export default function TransactionTable({
               ) : null
             }
           >
-            <TableHeader columns={columns}>
+            <TableHeader className='' columns={columns}>
               {(column) => (
-                <TableColumn
-                  className='py-2 text-left font-black'
-                  key={column.key}
-                >
+                <TableColumn className=' text-left' key={column.key}>
                   {column.label}
                 </TableColumn>
               )}
@@ -114,11 +114,10 @@ export default function TransactionTable({
               {(item) => (
                 <TableRow key={item.id}>
                   {(columnKey) => (
-                    <TableCell className='min-w-[170px] max-w-[170px] px-1'>
-                      <div className='w-full overflow-x-auto'>
-                        <div className='min-w-max font-semibold'>
-                          {renderCell(item, columnKey)}
-                        </div>
+                    <TableCell>
+                      {/* <div className='w-full overflow-x-auto'> */}
+                      <div className=' font-semibold'>
+                        {renderCell(item, columnKey)}
                       </div>
                     </TableCell>
                   )}
