@@ -1,31 +1,52 @@
 enum EventType {
   Borrow
-  FlashLoan
   Liquidation
   Repay
   Supply
   Withdraw
 }
 
+enum ProtocolType {
+  Aave
+  Compound
+}
+
 type User @entity {
   id: Bytes!
-  totalSupplied: BigInt! # uint256
-  totalBorrowed: BigInt! # uint256
-  totalRepaid: BigInt! # uint256
-  totalWithdrawn: BigInt! # uint256
-  totalLiquidated: BigInt! # uint256
-  flashLoanCount: Int! # uint8
+  aave: AaveUserStats @derivedFrom(field: "user")
+  compound: CompoundUserStats @derivedFrom(field: "user")
   transactions: [BaseTransaction!]! @derivedFrom(field: "user")
+}
+
+type AaveUserStats @entity {
+  id: Bytes!
+  user: User!
+  totalSupplied: BigInt!
+  totalBorrowed: BigInt!
+  totalRepaid: BigInt!
+  totalWithdrawn: BigInt!
+  totalLiquidated: BigInt!
   useReserveAsCollateral: Boolean!
+}
+
+type CompoundUserStats @entity {
+  id: Bytes!
+  user: User!
+  totalSupplied: BigInt!
+  totalBorrowed: BigInt!
+  totalRepaid: BigInt!
+  totalWithdrawn: BigInt!
+  totalLiquidated: BigInt!
 }
 
 # Generic Transaction Entity
 interface BaseTransaction @entity(timeseries: true) {
   id: Int8!
   user: User!
+  protocol: ProtocolType!
   eventType: EventType!
   amount: BigInt! # uint256
-  reserve: Bytes!
+  reserve: Bytes! # Represents the underlying asset
   blockNumber: BigInt!
   timestamp: Timestamp!
   transactionHash: Bytes!
@@ -34,43 +55,32 @@ interface BaseTransaction @entity(timeseries: true) {
 type BorrowTransaction implements BaseTransaction @entity(timeseries: true) {
   id: Int8!
   user: User!
+  protocol: ProtocolType!
   eventType: EventType!
   amount: BigInt! # uint256
   reserve: Bytes!
-  onBehalfOf: Bytes! # address
-  interestRateMode: Int! # uint8
-  borrowRate: BigInt! # uint256
-  referralCode: Int! # uint16
+  onBehalfOf: Bytes # address
+  interestRateMode: Int # uint8
+  borrowRate: BigInt # uint256
+  referralCode: Int # uint16
   blockNumber: BigInt!
   timestamp: Timestamp!
   transactionHash: Bytes!
 }
 
-type FlashLoanTransaction implements BaseTransaction @entity(timeseries: true) {
+type LiquidationTransaction implements BaseTransaction
+  @entity(timeseries: true) {
   id: Int8!
   user: User!
   eventType: EventType!
-  amount: BigInt! # uint256
-  reserve: Bytes!
-  target: Bytes! # address
-  interestRateMode: Int! #uint8
-  premium: BigInt! # uint256
-  referralCode: Int! # uint16
-  blockNumber: BigInt!
-  timestamp: Timestamp!
-  transactionHash: Bytes!
-}
-
-type LiquidationTransaction implements BaseTransaction @entity(timeseries: true) {
-  id: Int8!
-  user: User!
-  eventType: EventType!
-  amount: BigInt! # uint256
-  reserve: Bytes!
-  debtAsset: Bytes! # address
-  debtToCover: BigInt! # uint256
+  protocol: ProtocolType!
+  amount: BigInt! # Aave: debt repaid, Compound: collateral absorbed
+  reserve: Bytes! # address
+  debtAsset: Bytes # Aave only
+  debtToCover: BigInt # Aave only
   liquidator: Bytes! # address
-  receiveAToken: Boolean! # bool
+  receiveAToken: Boolean # Aave only
+  usdValue: BigInt # Compound only
   blockNumber: BigInt!
   timestamp: Timestamp!
   transactionHash: Bytes!
@@ -80,10 +90,12 @@ type RepayTransaction implements BaseTransaction @entity(timeseries: true) {
   id: Int8!
   user: User!
   eventType: EventType!
-  amount: BigInt! # uint256
+  protocol: ProtocolType!
+  amount: BigInt! # uint256 Aave: amount, Compound: basePaidOut
   reserve: Bytes!
-  repayer: Bytes! # address
-  useATokens: Boolean! # bool
+  repayer: Bytes! # address Aave: repayer, Compound: absorber
+  useATokens: Boolean! # Aave only
+  usdValue: BigInt # uint256
   blockNumber: BigInt!
   timestamp: Timestamp!
   transactionHash: Bytes!
@@ -93,10 +105,12 @@ type SupplyTransaction implements BaseTransaction @entity(timeseries: true) {
   id: Int8!
   user: User!
   eventType: EventType!
+  protocol: ProtocolType!
   amount: BigInt! # uint256
   reserve: Bytes! # address
-  onBehalfOf: Bytes! # address
-  referralCode: Int! # uint16
+  dst: Bytes # cToken recipient (Compound only)
+  onBehalfOf: Bytes # Aave only
+  referralCode: Int # Aave only
   blockNumber: BigInt!
   timestamp: Timestamp!
   transactionHash: Bytes!
@@ -106,8 +120,9 @@ type WithdrawTransaction implements BaseTransaction @entity(timeseries: true) {
   id: Int8!
   user: User!
   eventType: EventType!
+  protocol: ProtocolType!
   amount: BigInt! # uint256
-  reserve: Bytes!
+  reserve: Bytes! # Aave: Asset, Compound: Base asset
   to: Bytes! # address
   blockNumber: BigInt!
   timestamp: Timestamp!
@@ -116,37 +131,47 @@ type WithdrawTransaction implements BaseTransaction @entity(timeseries: true) {
 
 # Record statistics from daily transactions
 
-type DailyBorrowStats @aggregation(intervals: ["day"], source: "BorrowTransaction") {
+type DailyBorrowStats
+  @aggregation(intervals: ["day"], source: "BorrowTransaction") {
   id: Int8!
   user: User!
+  protocol: ProtocolType!
   timestamp: Timestamp!
   total: BigInt! @aggregate(fn: "sum", arg: "amount")
 }
 
-type DailySupplyStats @aggregation(intervals: ["day"], source: "SupplyTransaction") {
+type DailySupplyStats
+  @aggregation(intervals: ["day"], source: "SupplyTransaction") {
   id: Int8!
   user: User!
+  protocol: ProtocolType!
   timestamp: Timestamp!
   total: BigInt! @aggregate(fn: "sum", arg: "amount")
 }
 
-type DailyWithdrawStats @aggregation(intervals: ["day"], source: "WithdrawTransaction") {
+type DailyWithdrawStats
+  @aggregation(intervals: ["day"], source: "WithdrawTransaction") {
   id: Int8!
   user: User!
+  protocol: ProtocolType!
   timestamp: Timestamp!
   total: BigInt! @aggregate(fn: "sum", arg: "amount")
 }
 
-type DailyLiquidationStats @aggregation(intervals: ["day"], source: "LiquidationTransaction") {
+type DailyLiquidationStats
+  @aggregation(intervals: ["day"], source: "LiquidationTransaction") {
   id: Int8!
   user: User!
+  protocol: ProtocolType!
   timestamp: Timestamp!
   total: BigInt! @aggregate(fn: "sum", arg: "amount")
 }
 
-type DailyRepayStats @aggregation(intervals: ["day"], source: "RepayTransaction") {
+type DailyRepayStats
+  @aggregation(intervals: ["day"], source: "RepayTransaction") {
   id: Int8!
   user: User!
+  protocol: ProtocolType!
   timestamp: Timestamp!
   total: BigInt! @aggregate(fn: "sum", arg: "amount")
 }

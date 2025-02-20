@@ -6,6 +6,10 @@
     },
     "InitializableImmutableAdminUpgradeabilityProxy": {
       "address": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2"
+    },
+    "Comet": {
+      "address": "0xc3d688B66703497DAA19211EEdff47f25384cdc3",
+      "startBlock": 15412346
     }
   }
 }
