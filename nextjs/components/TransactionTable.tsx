@@ -1,4 +1,3 @@
-import { UserTransaction } from '@/utils/getRequestData';
 import {
   Table,
   TableHeader,
@@ -12,6 +11,7 @@ import { Spinner } from '@heroui/spinner';
 import { Dispatch, SetStateAction } from 'react';
 import React from 'react';
 import { convertEther, convertTimestamp } from '@/utils/parseUtils';
+import { UserTransaction } from '@/common/types';
 
 const columns = [
   {
@@ -29,6 +29,10 @@ const columns = [
   {
     key: 'reserve',
     label: 'RESERVE',
+  },
+  {
+    key: 'blockNumber',
+    label: 'BLOCK',
   },
   {
     key: 'transactionHash',
@@ -74,7 +78,9 @@ export default function TransactionTable({
 
   return (
     <div>
-      <h2 className='mt-8 font-semibold underline text-xl'>All Transactions</h2>
+      <h2 className='mt-8 font-semibold underline text-xl'>
+        Protocol Transactions
+      </h2>
       <div className='w-full my-3 overflow-x-auto bg-lightgrey2 border border-lightgrey3 rounded-2xl'>
         <div className='min-w-max'>
           <Table

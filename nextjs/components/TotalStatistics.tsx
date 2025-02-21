@@ -1,8 +1,9 @@
-import { User } from '@/utils/getRequestData';
+import { AaveUser, CompoundUser } from '@/common/types';
+import { isAaveUser } from '@/common/utils';
 import { ethers } from 'ethers';
 
 interface StatisticsProps {
-  user: User;
+  user: AaveUser | CompoundUser;
 }
 
 export default function TotalStatistics({ user }: StatisticsProps) {
@@ -55,14 +56,16 @@ export default function TotalStatistics({ user }: StatisticsProps) {
             {ethers.formatEther(BigInt(user.totalWithdrawn))}
           </span>
         </div>
-        <div className='flex flex-col'>
-          <span className='font-semibold brightness-75 uppercase text-sm tracking-widest'>
-            Flash Loan Count:
-          </span>
-          <span className='text-xl font-bold overflow-hidden text-ellipsis'>
-            {user.flashLoanCount}
-          </span>
-        </div>
+        {isAaveUser(user) && (
+          <div className='flex flex-col'>
+            <span className='font-semibold brightness-75 uppercase text-sm tracking-widest'>
+              Reserve as Collateral:
+            </span>
+            <span className='text-xl font-bold overflow-hidden text-ellipsis'>
+              {user.useReserveAsCollateral}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
