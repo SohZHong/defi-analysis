@@ -7,20 +7,39 @@ const USER_SEARCH_QUERY = gql`
   query getUser($search: String!) {
     user(id: $search) {
       id
-      flashLoanCount
-      totalBorrowed
-      totalLiquidated
-      totalRepaid
-      totalSupplied
-      totalWithdrawn
-      useReserveAsCollateral
+      aave {
+        totalBorrowed
+        totalLiquidated
+        totalRepaid
+        totalSupplied
+        totalWithdrawn
+        useReserveAsCollateral
+        id
+      }
+      compound {
+        totalBorrowed
+        totalLiquidated
+        totalRepaid
+        totalSupplied
+        totalWithdrawn
+        id
+      }
     }
   }
 `;
 
 const USER_TRANSACTION_SEARCH_QUERY = gql`
-  query getUserTransaction($search: String!, $first: Int!, $skip: Int!) {
-    baseTransactions(where: { user: $search }, first: $first, skip: $skip) {
+  query getUserTransaction(
+    $search: String!
+    $protocol: ProtocolType!
+    $first: Int!
+    $skip: Int!
+  ) {
+    baseTransactions(
+      where: { user: $search, protocol: $protocol }
+      first: $first
+      skip: $skip
+    ) {
       amount
       blockNumber
       eventType
@@ -33,28 +52,43 @@ const USER_TRANSACTION_SEARCH_QUERY = gql`
 `;
 
 const DAILY_STATS_SEARCH_QUERY = gql`
-  query getUserDailyStats($search: String!) {
-    dailyBorrowStats_collection(interval: day, where: { user: $search }) {
+  query getUserDailyStats($search: String!, $protocol: ProtocolType!) {
+    dailyBorrowStats_collection(
+      interval: day
+      where: { user: $search, protocol: $protocol }
+    ) {
       timestamp
       total
       id
     }
-    dailyLiquidationStats_collection(interval: day, where: { user: $search }) {
+    dailyLiquidationStats_collection(
+      interval: day
+      where: { user: $search, protocol: $protocol }
+    ) {
       timestamp
       total
       id
     }
-    dailyRepayStats_collection(interval: day, where: { user: $search }) {
+    dailyRepayStats_collection(
+      interval: day
+      where: { user: $search, protocol: $protocol }
+    ) {
       timestamp
       total
       id
     }
-    dailySupplyStats_collection(interval: day, where: { user: $search }) {
+    dailySupplyStats_collection(
+      interval: day
+      where: { user: $search, protocol: $protocol }
+    ) {
       timestamp
       total
       id
     }
-    dailyWithdrawStats_collection(interval: day, where: { user: $search }) {
+    dailyWithdrawStats_collection(
+      interval: day
+      where: { user: $search, protocol: $protocol }
+    ) {
       timestamp
       total
       id
