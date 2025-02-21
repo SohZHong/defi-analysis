@@ -9,7 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@heroui/button": "^2.2.13",
+    "@heroui/input": "^2.4.13",
     "@heroui/pagination": "^2.2.9",
+    "@heroui/select": "^2.4.13",
     "@heroui/spinner": "^2.2.7",
     "@heroui/system": "^2.4.7",
     "@heroui/table": "^2.2.9",
