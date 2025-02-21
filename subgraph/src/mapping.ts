@@ -1,4 +1,4 @@
-import { BigInt, Bytes } from '@graphprotocol/graph-ts';
+import { Address, BigInt, Bytes } from '@graphprotocol/graph-ts';
 import {
   Borrow as AaveBorrowEvent,
   LiquidationCall as AaveLiquidationCallEvent,
@@ -14,6 +14,7 @@ import {
   Supply as CompoundSupplyEvent,
   Withdraw as CompoundWithdrawEvent,
   WithdrawCollateral as CompoundWithdrawCollateralEvent,
+  Comet,
 } from '../generated/Comet/Comet';
 import {
   AaveUserStats,
@@ -26,33 +27,15 @@ import {
   WithdrawTransaction,
 } from '../generated/schema';
 
-const cTokenToUnderlying = new Map<string, string>();
-// cUSDC -> USDC
-cTokenToUnderlying.set(
-  '0xc3d688B66703497DAA19211EEdff47f25384cdc3',
-  '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
-);
-// cUSDT -> USDT
-cTokenToUnderlying.set(
-  '0x3Afdc9BCA9213A35503b077a6072F3D0d5AB0840',
-  '0xdAC17F958D2ee523a2206206994597C13D831ec7'
-);
-// cWETH -> WETH
-cTokenToUnderlying.set(
-  '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-  '0xA17581A9E3356d9A858b789D68B4d866e593aE94'
-);
-// cUSDS -> USDS
-cTokenToUnderlying.set(
-  '0x5D409e56D886231aDAf00c8775665AD0f9897b56',
-  '0xdC035D45d973E3EC169d2276DDab16f1e407384F'
-);
+function getUnderlyingAsset(cometAddress: Address): Bytes {
+  let comet = Comet.bind(cometAddress);
+  let tryUnderlying = comet.try_baseToken(); // baseToken() returns the underlying asset
 
-function getUnderlyingAsset(cTokenAddress: Bytes): Bytes {
-  return (
-    Bytes.fromHexString(cTokenToUnderlying.get(cTokenAddress.toHexString())) ||
-    Bytes.empty()
-  );
+  if (!tryUnderlying.reverted) {
+    return tryUnderlying.value;
+  }
+
+  return Bytes.empty(); // Return empty if call fails
 }
 
 // Initialize AaveUserStats
@@ -133,6 +116,7 @@ export function handleAaveBorrow(event: AaveBorrowEvent): void {
   );
   tx.user = user.id;
   tx.eventType = 'Borrow';
+  tx.protocol = 'Aave';
   tx.reserve = event.params.reserve;
   tx.amount = event.params.amount;
   tx.onBehalfOf = event.params.onBehalfOf;
@@ -162,6 +146,7 @@ export function handleAaveLiquidationCall(
   );
   tx.user = user.id;
   tx.eventType = 'Liquidation';
+  tx.protocol = 'Aave';
   tx.amount = event.params.liquidatedCollateralAmount;
   tx.reserve = event.params.collateralAsset;
   tx.debtAsset = event.params.debtAsset;
@@ -187,6 +172,7 @@ export function handleAaveRepay(event: AaveRepayEvent): void {
   );
   tx.user = user.id;
   tx.eventType = 'Repay';
+  tx.protocol = 'Aave';
   tx.reserve = event.params.reserve;
   tx.amount = event.params.amount;
   tx.repayer = event.params.repayer;
@@ -232,6 +218,7 @@ export function handleAaveSupply(event: AaveSupplyEvent): void {
   );
   tx.user = user.id;
   tx.eventType = 'Supply';
+  tx.protocol = 'Aave';
   tx.reserve = event.params.reserve;
   tx.amount = event.params.amount;
   tx.onBehalfOf = event.params.onBehalfOf;
@@ -255,6 +242,7 @@ export function handleAaveWithdraw(event: AaveWithdrawEvent): void {
   );
   tx.user = user.id;
   tx.eventType = 'Withdraw';
+  tx.protocol = 'Aave';
   tx.reserve = event.params.reserve;
   tx.amount = event.params.amount;
   tx.to = event.params.to;
@@ -341,10 +329,9 @@ export function handleCompoundSupply(event: CompoundSupplyEvent): void {
   entity.user = user.id;
   entity.eventType = 'Supply';
   entity.protocol = 'Compound';
-  entity.dst = getUnderlyingAsset(event.address);
+  entity.dst = event.params.dst;
   entity.amount = event.params.amount;
-
-  entity.reserve = getUnderlyingAsset(event.params.dst);
+  entity.reserve = getUnderlyingAsset(event.address);
   entity.blockNumber = event.block.number;
   entity.timestamp = event.block.timestamp.toI64();
   entity.transactionHash = event.transaction.hash;
