@@ -1,3 +1,4 @@
+import { DailyStatsSearchResults, User, UserTransaction } from '@/common/types';
 import { gql, request } from 'graphql-request';
 
 const url = 'https://api.studio.thegraph.com/query/90479/defi-analysis/v0.0.2';
@@ -61,25 +62,6 @@ const DAILY_STATS_SEARCH_QUERY = gql`
   }
 `;
 
-export interface UserTransaction {
-  id: string;
-  amount: string;
-  eventType: string;
-  reserve: string;
-  timestamp: string;
-  transactionHash: string;
-}
-
-export interface User {
-  id: string;
-  totalSupplied: string;
-  totalBorrowed: string;
-  totalRepaid: string;
-  totalLiquidated: string;
-  totalWithdrawn: string;
-  flashLoanCount: number;
-}
-
 export interface TransactionSearchResults {
   baseTransactions: UserTransaction[];
 }
@@ -88,19 +70,7 @@ export interface UserSearchResults {
   user: User | null;
 }
 
-export interface DailyStats {
-  id: string;
-  total: string;
-  timestamp: string;
-}
-
-export interface DailyStatsSearchResults {
-  dailyBorrowStats_collection: DailyStats[];
-  dailyLiquidationStats_collection: DailyStats[];
-  dailyRepayStats_collection: DailyStats[];
-  dailySupplyStats_collection: DailyStats[];
-  dailyWithdrawStats_collection: DailyStats[];
-}
+export async function fetchAaveUserStats(userAddress: string) {}
 
 export async function fetchUserData(
   searchQuery: string
