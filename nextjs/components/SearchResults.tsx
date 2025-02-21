@@ -15,10 +15,14 @@ import useSWR from 'swr';
 import { Spinner } from '@heroui/spinner';
 
 interface SearchResultsProps {
-  searchQuery: string;
+  userAddress: string;
+  protocol: string;
 }
 
-export default function UserSearchResults({ searchQuery }: SearchResultsProps) {
+export default function UserSearchResults({
+  userAddress,
+  protocol,
+}: SearchResultsProps) {
   // State Management for Transactions
   const [page, setPage] = useState(1);
   const rowsPerPage = 10; // UI pagination
@@ -31,9 +35,9 @@ export default function UserSearchResults({ searchQuery }: SearchResultsProps) {
     isLoading,
     error: transactionError,
   } = useSWR(
-    [searchQuery, transactionsPerQuery, skip],
-    ([searchQuery, first, skip]) =>
-      fetchTransactionData(searchQuery, first, skip),
+    [userAddress, protocol, transactionsPerQuery, skip],
+    ([searchQuery, protocol, first, skip]) =>
+      fetchTransactionData(searchQuery, protocol, first, skip),
     { keepPreviousData: true }
   );
 
@@ -48,6 +52,7 @@ export default function UserSearchResults({ searchQuery }: SearchResultsProps) {
 
   // Paginate transactions client-side
   const paginatedTransactions = useMemo(() => {
+    console.log('Transactions:', transactions);
     return (
       transactions?.baseTransactions.slice(
         (page - 1) * rowsPerPage,
@@ -61,9 +66,9 @@ export default function UserSearchResults({ searchQuery }: SearchResultsProps) {
     isLoading: isDailyStatsLoading,
     error: dailyStatsError,
   } = useQuery({
-    queryKey: ['dailyStats', searchQuery],
-    queryFn: () => fetchDailyStats(searchQuery), // Calls the server function
-    enabled: !!searchQuery, // Only fetch when searchQuery exists
+    queryKey: ['dailyStats', userAddress, protocol],
+    queryFn: () => fetchDailyStats(userAddress, protocol), // Calls the server function
+    enabled: !!userAddress && !!protocol, // Only fetch when searchQuery exists
   });
 
   const {
@@ -71,9 +76,9 @@ export default function UserSearchResults({ searchQuery }: SearchResultsProps) {
     isLoading: isUserLoading,
     error: userError,
   } = useQuery({
-    queryKey: ['userData', searchQuery],
-    queryFn: () => fetchUserData(searchQuery), // Calls the server function
-    enabled: !!searchQuery, // Only fetch when searchQuery exists
+    queryKey: ['userData', userAddress],
+    queryFn: () => fetchUserData(userAddress), // Calls the server function
+    enabled: !!userAddress, // Only fetch when searchQuery exists
   });
 
   return (
@@ -122,7 +127,9 @@ export default function UserSearchResults({ searchQuery }: SearchResultsProps) {
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.3 }}
             >
-              <TotalStatistics user={userData.user} />
+              <TotalStatistics
+                user={userData.user[protocol === 'Aave' ? 'aave' : 'compound']}
+              />
               <TransactionTable
                 transactions={paginatedTransactions}
                 isLoading={isLoading}
