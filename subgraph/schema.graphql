@@ -21,6 +21,7 @@ type User @entity {
 type AaveUserStats @entity {
   id: Bytes!
   user: User!
+  totalTransactions: BigInt!
   totalSupplied: BigInt!
   totalBorrowed: BigInt!
   totalRepaid: BigInt!
@@ -32,6 +33,7 @@ type AaveUserStats @entity {
 type CompoundUserStats @entity {
   id: Bytes!
   user: User!
+  totalTransactions: BigInt!
   totalSupplied: BigInt!
   totalBorrowed: BigInt!
   totalRepaid: BigInt!

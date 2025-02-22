@@ -81,6 +81,7 @@ function loadUser(id: Bytes): User {
     // Initialize Aave stats
     let aaveStats = new AaveUserStats(id);
     aaveStats.user = id;
+    aaveStats.totalTransactions = BigInt.zero();
     aaveStats.totalSupplied = BigInt.zero();
     aaveStats.totalBorrowed = BigInt.zero();
     aaveStats.totalRepaid = BigInt.zero();
@@ -92,6 +93,7 @@ function loadUser(id: Bytes): User {
     // Initialize Compound stats
     let compoundStats = new CompoundUserStats(id);
     compoundStats.user = id;
+    compoundStats.totalTransactions = BigInt.zero();
     compoundStats.totalSupplied = BigInt.zero();
     compoundStats.totalBorrowed = BigInt.zero();
     compoundStats.totalRepaid = BigInt.zero();
@@ -107,6 +109,9 @@ export function handleAaveBorrow(event: AaveBorrowEvent): void {
   // Update total borrowed
   let aaveStats = loadAaveUserStats(user);
 
+  aaveStats.totalTransactions = aaveStats.totalTransactions.plus(
+    BigInt.fromI32(1)
+  );
   aaveStats.totalBorrowed = aaveStats.totalBorrowed.plus(event.params.amount);
   aaveStats.save();
 
@@ -140,6 +145,10 @@ export function handleAaveLiquidationCall(
   aaveStats.totalLiquidated = aaveStats.totalLiquidated.plus(
     event.params.liquidatedCollateralAmount
   );
+  aaveStats.totalTransactions = aaveStats.totalTransactions.plus(
+    BigInt.fromI32(1)
+  );
+  aaveStats.save();
 
   let tx = new LiquidationTransaction(
     event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
@@ -165,7 +174,10 @@ export function handleAaveRepay(event: AaveRepayEvent): void {
   let aaveStats = loadAaveUserStats(user);
   // Update total repaid
   aaveStats.totalRepaid = aaveStats.totalRepaid.plus(event.params.amount);
-  user.save();
+  aaveStats.totalTransactions = aaveStats.totalTransactions.plus(
+    BigInt.fromI32(1)
+  );
+  aaveStats.save();
 
   let tx = new RepayTransaction(
     event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
@@ -211,6 +223,9 @@ export function handleAaveSupply(event: AaveSupplyEvent): void {
   let aaveStats = loadAaveUserStats(user);
   // Update total supplied
   aaveStats.totalSupplied = aaveStats.totalSupplied.plus(event.params.amount);
+  aaveStats.totalTransactions = aaveStats.totalTransactions.plus(
+    BigInt.fromI32(1)
+  );
   aaveStats.save();
 
   let tx = new SupplyTransaction(
@@ -235,6 +250,9 @@ export function handleAaveWithdraw(event: AaveWithdrawEvent): void {
   let aaveStats = loadAaveUserStats(user);
   // Update total withdrawn
   aaveStats.totalWithdrawn = aaveStats.totalWithdrawn.plus(event.params.amount);
+  aaveStats.totalTransactions = aaveStats.totalTransactions.plus(
+    BigInt.fromI32(1)
+  );
   aaveStats.save();
 
   let tx = new WithdrawTransaction(
@@ -261,6 +279,9 @@ export function handleCompoundAbsorbCollateral(
 
   compoundStats.totalLiquidated = compoundStats.totalLiquidated.plus(
     event.params.collateralAbsorbed
+  );
+  compoundStats.totalTransactions = compoundStats.totalTransactions.plus(
+    BigInt.fromI32(1)
   );
   compoundStats.save();
 
@@ -294,6 +315,11 @@ export function handleCompoundAbsorbDebt(event: CompoundAbsorbDebtEvent): void {
   compoundStats.totalLiquidated = compoundStats.totalLiquidated.plus(
     event.params.basePaidOut
   );
+
+  compoundStats.totalTransactions = compoundStats.totalTransactions.plus(
+    BigInt.fromI32(1)
+  );
+
   compoundStats.save();
   let entity = new RepayTransaction(
     event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
@@ -322,6 +348,11 @@ export function handleCompoundSupply(event: CompoundSupplyEvent): void {
   compoundStats.totalSupplied = compoundStats.totalSupplied.plus(
     event.params.amount
   );
+
+  compoundStats.totalTransactions = compoundStats.totalTransactions.plus(
+    BigInt.fromI32(1)
+  );
+
   compoundStats.save();
   let entity = new SupplyTransaction(
     event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
@@ -346,6 +377,9 @@ export function handleCompoundWithdraw(event: CompoundWithdrawEvent): void {
 
   compoundStats.totalBorrowed = compoundStats.totalBorrowed.plus(
     event.params.amount
+  );
+  compoundStats.totalTransactions = compoundStats.totalTransactions.plus(
+    BigInt.fromI32(1)
   );
   compoundStats.save();
 
@@ -373,6 +407,9 @@ export function handleCompoundWithdrawCollateral(
   // Update total withdrawn (User withdrawing collateral they supplied)
   compoundStats.totalWithdrawn = compoundStats.totalWithdrawn.plus(
     event.params.amount
+  );
+  compoundStats.totalTransactions = compoundStats.totalTransactions.plus(
+    BigInt.fromI32(1)
   );
   compoundStats.save();
 
