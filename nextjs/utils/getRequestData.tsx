@@ -108,12 +108,7 @@ export interface UserSearchResults {
 
 export async function fetchUserData(
   searchQuery: string
-): Promise<UserSearchResults | null> {
-  if (!searchQuery) {
-    console.warn('fetchUserData: searchQuery is empty, returning null');
-    return null;
-  }
-
+): Promise<UserSearchResults> {
   try {
     const response: UserSearchResults = await request(url, USER_SEARCH_QUERY, {
       search: searchQuery,
@@ -136,12 +131,7 @@ export async function fetchTransactionData(
   protocol: string,
   first: number = 50,
   skip: number = 0
-): Promise<TransactionSearchResults | null> {
-  if (!searchQuery) {
-    console.warn('fetchTransactionData: searchQuery is empty, returning null');
-    return null;
-  }
-
+): Promise<TransactionSearchResults> {
   try {
     const response: TransactionSearchResults = await request(
       url,
@@ -166,8 +156,7 @@ export async function fetchTransactionData(
 export async function fetchDailyStats(
   searchQuery: string,
   protocol: string
-): Promise<DailyStatsSearchResults | null> {
-  if (!searchQuery) return null;
+): Promise<DailyStatsSearchResults> {
   try {
     const response: DailyStatsSearchResults = await request(
       url,
@@ -178,9 +167,9 @@ export async function fetchDailyStats(
       }
     );
 
-    return response; // Ensure returning the correct data format
+    return response;
   } catch (error) {
     console.error('GraphQL Request Error:', error); // Catch errors
-    return null; // Return null on failure
+    throw error;
   }
 }
