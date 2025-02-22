@@ -13,6 +13,7 @@ import DailyStatsChart from './DailyStatsChart';
 import { useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { Spinner } from '@heroui/spinner';
+import { AaveUser, CompoundUser, UserTransaction } from '@/common/types';
 
 interface SearchResultsProps {
   userAddress: string;
@@ -23,13 +24,14 @@ export default function UserSearchResults({
   userAddress,
   protocol,
 }: SearchResultsProps) {
-  // State Management for Transactions
   const [page, setPage] = useState(1);
   const rowsPerPage = 10; // UI pagination
   const transactionsPerQuery = 50; // Fetch in batches
-  const skip = (page - 1) * rowsPerPage; // Skip for GraphQL
+  const skip = (page - 1) * transactionsPerQuery; // Fetching in batches of 50
 
-  // Fetch transactions with SWR
+  // Store all loaded transactions to avoid losing data
+  const [allTransactions, setAllTransactions] = useState<UserTransaction[]>([]);
+
   const {
     data: transactions,
     isLoading,
@@ -38,28 +40,24 @@ export default function UserSearchResults({
     [userAddress, protocol, transactionsPerQuery, skip],
     ([searchQuery, protocol, first, skip]) =>
       fetchTransactionData(searchQuery, protocol, first, skip),
-    { keepPreviousData: true }
+    {
+      keepPreviousData: true,
+      onSuccess: (data) => {
+        if (data?.baseTransactions) {
+          setAllTransactions((prev) => {
+            // Prevent duplicates
+            const uniqueTransactions = [
+              ...prev,
+              ...data.baseTransactions.filter(
+                (tx) => !prev.some((prevTx) => prevTx.id === tx.id)
+              ),
+            ];
+            return uniqueTransactions;
+          });
+        }
+      },
+    }
   );
-
-  // Calculate total pages dynamically
-  const totalPages = useMemo(() => {
-    return transactions
-      ? transactions?.baseTransactions.length > 0
-        ? Math.ceil(transactions.baseTransactions.length / rowsPerPage)
-        : 1
-      : 1;
-  }, [transactions]);
-
-  // Paginate transactions client-side
-  const paginatedTransactions = useMemo(() => {
-    console.log('Transactions:', transactions);
-    return (
-      transactions?.baseTransactions.slice(
-        (page - 1) * rowsPerPage,
-        page * rowsPerPage
-      ) || []
-    );
-  }, [transactions, page]);
 
   const {
     data: dailyData,
@@ -68,7 +66,7 @@ export default function UserSearchResults({
   } = useQuery({
     queryKey: ['dailyStats', userAddress, protocol],
     queryFn: () => fetchDailyStats(userAddress, protocol), // Calls the server function
-    enabled: !!userAddress && !!protocol, // Only fetch when searchQuery exists
+    enabled: !!userAddress && !!protocol, // Only fetch when userAddress exists
   });
 
   const {
@@ -78,8 +76,25 @@ export default function UserSearchResults({
   } = useQuery({
     queryKey: ['userData', userAddress],
     queryFn: () => fetchUserData(userAddress), // Calls the server function
-    enabled: !!userAddress, // Only fetch when searchQuery exists
+    enabled: !!userAddress, // Only fetch when userAddress exists
   });
+
+  const userProtocol = useMemo(() => {
+    return userData?.user[protocol === 'Aave' ? 'aave' : 'compound'];
+  }, [protocol]);
+
+  // total pages calculation
+  const totalPages = useMemo(() => {
+    if (userProtocol?.totalTransactions) {
+      return Math.ceil(Number(userProtocol.totalTransactions) / rowsPerPage);
+    }
+    return 1; // Default to 1 if no data is available
+  }, [userData, rowsPerPage]);
+
+  // Paginate transactions client-side from stored data
+  const paginatedTransactions = useMemo(() => {
+    return allTransactions.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  }, [allTransactions, page]);
 
   return (
     <div className='w-full border border-lightgrey p-4 rounded-lg'>
@@ -127,9 +142,7 @@ export default function UserSearchResults({
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.3 }}
             >
-              <TotalStatistics
-                user={userData.user[protocol === 'Aave' ? 'aave' : 'compound']}
-              />
+              <TotalStatistics user={userProtocol as AaveUser | CompoundUser} />
               <TransactionTable
                 transactions={paginatedTransactions}
                 isLoading={isLoading}

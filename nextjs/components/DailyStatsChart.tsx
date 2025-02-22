@@ -7,8 +7,8 @@ import {
   PointElement,
   Tooltip,
 } from 'chart.js';
-import { DailyStats } from '@/utils/getRequestData';
 import { convertTimestamp, convertEther } from '@/utils/parseUtils';
+import { DailyStats } from '@/common/types';
 
 ChartJS.register(
   LineElement,

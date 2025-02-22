@@ -11,6 +11,7 @@ export interface UserTransaction {
 
 export interface AaveUser {
   id: string;
+  totalTransactions: string;
   useReserveAsCollateral: boolean;
   totalSupplied: string;
   totalWithdrawn: string;
@@ -21,6 +22,7 @@ export interface AaveUser {
 
 export interface CompoundUser {
   id: string;
+  totalTransactions: string;
   totalSupplied: string;
   totalWithdrawn: string;
   totalRepaid: string;
@@ -32,7 +34,6 @@ export interface User {
   id: string;
   aave: AaveUser;
   compound: CompoundUser;
-  transactions: UserTransaction[];
 }
 
 export interface DailyStats {

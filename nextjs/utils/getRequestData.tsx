@@ -1,13 +1,14 @@
 import { DailyStatsSearchResults, User, UserTransaction } from '@/common/types';
 import { gql, request } from 'graphql-request';
 
-const url = 'https://api.studio.thegraph.com/query/90479/defi-analysis/v0.0.2';
+const url = 'https://api.studio.thegraph.com/query/90479/defi-analysis/v0.0.3';
 
 const USER_SEARCH_QUERY = gql`
   query getUser($search: String!) {
     user(id: $search) {
       id
       aave {
+        totalTransactions
         totalBorrowed
         totalLiquidated
         totalRepaid
@@ -17,6 +18,7 @@ const USER_SEARCH_QUERY = gql`
         id
       }
       compound {
+        totalTransactions
         totalBorrowed
         totalLiquidated
         totalRepaid
@@ -101,10 +103,8 @@ export interface TransactionSearchResults {
 }
 
 export interface UserSearchResults {
-  user: User | null;
+  user: User;
 }
-
-export async function fetchAaveUserStats(userAddress: string) {}
 
 export async function fetchUserData(
   searchQuery: string
@@ -115,13 +115,9 @@ export async function fetchUserData(
   }
 
   try {
-    console.log(`Fetching user data for: ${searchQuery}`);
-
     const response: UserSearchResults = await request(url, USER_SEARCH_QUERY, {
       search: searchQuery,
     });
-
-    console.log('GraphQL Response:', response);
 
     if (!response || !response.user) {
       console.error('fetchUserData: No user found in response!', response);
@@ -137,6 +133,7 @@ export async function fetchUserData(
 
 export async function fetchTransactionData(
   searchQuery: string,
+  protocol: string,
   first: number = 50,
   skip: number = 0
 ): Promise<TransactionSearchResults | null> {
@@ -146,17 +143,16 @@ export async function fetchTransactionData(
   }
 
   try {
-    console.log(`Fetching transaction data for: ${searchQuery}`);
     const response: TransactionSearchResults = await request(
       url,
       USER_TRANSACTION_SEARCH_QUERY,
       {
         search: searchQuery,
+        protocol,
         first,
         skip,
       }
     );
-    console.log('GraphQL Response:', response);
     if (response.baseTransactions.length === 0) {
       throw new Error('No data for the user is found');
     }
@@ -168,7 +164,8 @@ export async function fetchTransactionData(
 }
 
 export async function fetchDailyStats(
-  searchQuery: string
+  searchQuery: string,
+  protocol: string
 ): Promise<DailyStatsSearchResults | null> {
   if (!searchQuery) return null;
   try {
@@ -177,9 +174,9 @@ export async function fetchDailyStats(
       DAILY_STATS_SEARCH_QUERY,
       {
         search: searchQuery,
+        protocol,
       }
     );
-    console.log('GraphQL Response:', response); // Debugging log
 
     return response; // Ensure returning the correct data format
   } catch (error) {
