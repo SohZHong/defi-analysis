@@ -89,7 +89,7 @@ export default function UserSearchResults({
       return Math.ceil(Number(userProtocol.totalTransactions) / rowsPerPage);
     }
     return 1; // Default to 1 if no data is available
-  }, [userData, rowsPerPage]);
+  }, [userData, rowsPerPage, userProtocol?.totalTransactions]);
 
   // Paginate transactions client-side from stored data
   const paginatedTransactions = useMemo(() => {
