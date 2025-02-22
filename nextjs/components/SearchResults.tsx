@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import TotalStatistics from './TotalStatistics';
 import TransactionTable from './TransactionTable';
 import DailyStatsChart from './DailyStatsChart';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { Spinner } from '@heroui/spinner';
 import { AaveUser, CompoundUser, UserTransaction } from '@/common/types';
@@ -24,7 +24,7 @@ export default function UserSearchResults({
   userAddress,
   protocol,
 }: SearchResultsProps) {
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState<number>(1);
   const rowsPerPage = 10; // UI pagination
   const transactionsPerQuery = 50; // Fetch in batches
   const skip = (page - 1) * transactionsPerQuery; // Fetching in batches of 50
@@ -81,7 +81,7 @@ export default function UserSearchResults({
 
   const userProtocol = useMemo(() => {
     return userData?.user[protocol === 'Aave' ? 'aave' : 'compound'];
-  }, [protocol]);
+  }, [userData, protocol]);
 
   // total pages calculation
   const totalPages = useMemo(() => {
@@ -95,6 +95,12 @@ export default function UserSearchResults({
   const paginatedTransactions = useMemo(() => {
     return allTransactions.slice((page - 1) * rowsPerPage, page * rowsPerPage);
   }, [allTransactions, page]);
+
+  useEffect(() => {
+    if (userError || dailyStatsError || transactionError) {
+      setAllTransactions([]); // Clear previous transactions
+    }
+  }, [userError, dailyStatsError, transactionError]);
 
   return (
     <div className='w-full border border-lightgrey p-4 rounded-lg'>
@@ -113,7 +119,7 @@ export default function UserSearchResults({
           </motion.div>
         )}
 
-        {(userError || dailyStatsError || transactionError) && (
+        {userError || dailyStatsError || transactionError ? (
           <motion.p
             key='error'
             initial={{ opacity: 0, y: -10 }}
@@ -127,12 +133,8 @@ export default function UserSearchResults({
               ? dailyStatsError.message
               : transactionError.message}
           </motion.p>
-        )}
-
-        {!(isUserLoading || isDailyStatsLoading) &&
-          !(userError || dailyStatsError) &&
-          userData &&
-          userData.user &&
+        ) : (
+          userProtocol &&
           dailyData &&
           transactions && (
             <motion.div
@@ -158,7 +160,8 @@ export default function UserSearchResults({
                 dailyWithdrawStats={dailyData.dailyWithdrawStats_collection}
               />
             </motion.div>
-          )}
+          )
+        )}
       </AnimatePresence>
     </div>
   );
