@@ -17,15 +17,25 @@ import {
   Comet,
 } from '../generated/Comet/Comet';
 import {
+  Borrow as SiloBorrowEvent,
+  Deposit as SiloDepositEvent,
+  Liquidate as SiloLiquidateEvent,
+  Repay as SiloRepayEvent,
+  Withdraw as SiloWithdrawEvent,
+} from '../generated/Silo/Silo';
+import {
   AaveUserStats,
   BorrowTransaction,
   CompoundUserStats,
   LiquidationTransaction,
   RepayTransaction,
+  SiloUserStats,
   SupplyTransaction,
   User,
   WithdrawTransaction,
 } from '../generated/schema';
+import { DataSourceTemplate } from '@graphprotocol/graph-ts';
+import { NewSilo as NewSiloEvent } from '../generated/SiloRepository/SiloRepository';
 
 function getUnderlyingAsset(cometAddress: Address): Bytes {
   let comet = Comet.bind(cometAddress);
@@ -71,6 +81,22 @@ function loadCompoundUserStats(user: User): CompoundUserStats {
   return compoundStats;
 }
 
+// Initialize SiloUserStats
+function loadSiloUserStats(user: User): SiloUserStats {
+  let siloStats = SiloUserStats.load(user.id);
+  if (!siloStats) {
+    siloStats = new SiloUserStats(user.id);
+    siloStats.user = user.id;
+    siloStats.totalSupplied = BigInt.zero();
+    siloStats.totalBorrowed = BigInt.zero();
+    siloStats.totalRepaid = BigInt.zero();
+    siloStats.totalWithdrawn = BigInt.zero();
+    siloStats.totalLiquidated = BigInt.zero();
+    siloStats.save();
+  }
+  return siloStats;
+}
+
 // Dynamically initialize or retrieve user
 function loadUser(id: Bytes): User {
   let user = User.load(id);
@@ -100,6 +126,16 @@ function loadUser(id: Bytes): User {
     compoundStats.totalWithdrawn = BigInt.zero();
     compoundStats.totalLiquidated = BigInt.zero();
     compoundStats.save();
+
+    let siloStats = new SiloUserStats(id);
+    siloStats.user = id;
+    siloStats.totalTransactions = BigInt.zero();
+    siloStats.totalSupplied = BigInt.zero();
+    siloStats.totalBorrowed = BigInt.zero();
+    siloStats.totalRepaid = BigInt.zero();
+    siloStats.totalWithdrawn = BigInt.zero();
+    siloStats.totalLiquidated = BigInt.zero();
+    siloStats.save();
   }
   return user;
 }
@@ -425,6 +461,145 @@ export function handleCompoundWithdrawCollateral(
   entity.reserve = getUnderlyingAsset(event.address);
 
   entity.to = event.params.to;
+  entity.blockNumber = event.block.number;
+  entity.timestamp = event.block.timestamp.toI64();
+  entity.transactionHash = event.transaction.hash;
+
+  entity.save();
+}
+
+export function handleNewSilo(event: NewSiloEvent): void {
+  DataSourceTemplate.create('Silo', [event.params.silo.toHex()]);
+}
+
+export function handleSiloBorrow(event: SiloBorrowEvent): void {
+  let user = loadUser(event.params.user);
+  let siloStats = loadSiloUserStats(user);
+
+  // Update total borrowed
+  siloStats.totalBorrowed = siloStats.totalBorrowed.plus(event.params.amount);
+  siloStats.totalTransactions = siloStats.totalTransactions.plus(
+    BigInt.fromI32(1)
+  );
+  siloStats.save();
+
+  let entity = new BorrowTransaction(
+    event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
+  );
+  entity.user = user.id;
+  entity.eventType = 'Borrow';
+  entity.protocol = 'Silo';
+  entity.amount = event.params.amount;
+  entity.reserve = event.params.asset;
+
+  entity.blockNumber = event.block.number;
+  entity.timestamp = event.block.timestamp.toI64();
+  entity.transactionHash = event.transaction.hash;
+
+  entity.save();
+}
+
+export function handleSiloDeposit(event: SiloDepositEvent): void {
+  let user = loadUser(event.params.depositor);
+  let siloStats = loadSiloUserStats(user);
+
+  // Update total deposited
+  siloStats.totalSupplied = siloStats.totalSupplied.plus(event.params.amount);
+  siloStats.totalTransactions = siloStats.totalTransactions.plus(
+    BigInt.fromI32(1)
+  );
+  siloStats.save();
+
+  let entity = new BorrowTransaction(
+    event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
+  );
+
+  entity.user = user.id;
+  entity.eventType = 'Supply';
+  entity.protocol = 'Silo';
+  entity.reserve = event.params.asset;
+  entity.amount = event.params.amount;
+
+  entity.blockNumber = event.block.number;
+  entity.timestamp = event.block.timestamp.toI64();
+  entity.transactionHash = event.transaction.hash;
+
+  entity.save();
+}
+
+export function handleSiloLiquidate(event: SiloLiquidateEvent): void {
+  let user = loadUser(event.params.user);
+  let siloStats = loadSiloUserStats(user);
+
+  // Update total liquidated
+  siloStats.totalLiquidated = siloStats.totalLiquidated.plus(
+    event.params.seizedCollateral
+  );
+  siloStats.totalTransactions = siloStats.totalTransactions.plus(
+    BigInt.fromI32(1)
+  );
+  siloStats.save();
+  let entity = new LiquidationTransaction(
+    event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
+  );
+  entity.user = user.id;
+  entity.eventType = 'Liquidation';
+  entity.protocol = 'Silo';
+  entity.reserve = event.params.asset;
+  entity.amount = event.params.seizedCollateral;
+
+  entity.blockNumber = event.block.number;
+  entity.timestamp = event.block.timestamp.toI64();
+  entity.transactionHash = event.transaction.hash;
+
+  entity.save();
+}
+
+export function handleSiloRepay(event: SiloRepayEvent): void {
+  let user = loadUser(event.params.user);
+  let siloStats = loadSiloUserStats(user);
+
+  // Update total liquidated
+  siloStats.totalRepaid = siloStats.totalRepaid.plus(event.params.amount);
+  siloStats.totalTransactions = siloStats.totalTransactions.plus(
+    BigInt.fromI32(1)
+  );
+  siloStats.save();
+  let entity = new RepayTransaction(
+    event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
+  );
+  entity.user = user.id;
+  entity.eventType = 'Repay';
+  entity.protocol = 'Silo';
+  entity.reserve = event.params.asset;
+  entity.amount = event.params.amount;
+  entity.repayer = event.params.user;
+  entity.blockNumber = event.block.number;
+  entity.timestamp = event.block.timestamp.toI64();
+  entity.transactionHash = event.transaction.hash;
+
+  entity.save();
+}
+
+export function handleSiloWithdraw(event: SiloWithdrawEvent): void {
+  let user = loadUser(event.params.receiver);
+  let siloStats = loadSiloUserStats(user);
+
+  // Update total liquidated
+  siloStats.totalRepaid = siloStats.totalRepaid.plus(event.params.amount);
+  siloStats.totalTransactions = siloStats.totalTransactions.plus(
+    BigInt.fromI32(1)
+  );
+  siloStats.save();
+  let entity = new WithdrawTransaction(
+    event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
+  );
+  entity.user = user.id;
+  entity.eventType = 'Withdraw';
+  entity.protocol = 'Silo';
+  entity.reserve = event.params.asset;
+  entity.amount = event.params.amount;
+  entity.to = event.params.receiver;
   entity.blockNumber = event.block.number;
   entity.timestamp = event.block.timestamp.toI64();
   entity.transactionHash = event.transaction.hash;

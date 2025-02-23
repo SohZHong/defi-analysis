@@ -9,12 +9,14 @@ enum EventType {
 enum ProtocolType {
   Aave
   Compound
+  Silo
 }
 
 type User @entity {
   id: Bytes!
   aave: AaveUserStats @derivedFrom(field: "user")
   compound: CompoundUserStats @derivedFrom(field: "user")
+  silo: SiloUserStats @derivedFrom(field: "user")
   transactions: [BaseTransaction!]! @derivedFrom(field: "user")
 }
 
@@ -31,6 +33,17 @@ type AaveUserStats @entity {
 }
 
 type CompoundUserStats @entity {
+  id: Bytes!
+  user: User!
+  totalTransactions: BigInt!
+  totalSupplied: BigInt!
+  totalBorrowed: BigInt!
+  totalRepaid: BigInt!
+  totalWithdrawn: BigInt!
+  totalLiquidated: BigInt!
+}
+
+type SiloUserStats @entity {
   id: Bytes!
   user: User!
   totalTransactions: BigInt!

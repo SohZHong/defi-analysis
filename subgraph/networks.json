@@ -10,6 +10,12 @@
     "Comet": {
       "address": "0xc3d688B66703497DAA19211EEdff47f25384cdc3",
       "startBlock": 15412346
+    },
+    "SiloRepository": {
+      "address": "0xbACBBefda6fD1FbF5a2d6A79916F4B6124eD2D49"
+    },
+    "Silo": {
+      "address": "0xFCCc27AABd0AB7a0B2Ad2B7760037B1eAb61616b"
     }
   }
 }

@@ -3,11 +3,6 @@ indexerHints:
   prune: auto
 schema:
   file: ./schema.graphql
-# features:
-#   - grafting
-# graft:
-#   base: QmXpapsWyEbfMEp1vwUrPAxDsjfJhKv7JQ4HYhLjpyLXh1
-#   block: 21000000
 dataSources:
   - kind: ethereum
     name: PoolImplementation
@@ -58,7 +53,7 @@ dataSources:
           handler: handleAaveWithdraw
       file: ./src/mapping.ts
   - kind: ethereum
-    name: Comet
+    name: CometUSDC
     network: mainnet
     source:
       address: '0xc3d688B66703497DAA19211EEdff47f25384cdc3'
@@ -97,4 +92,241 @@ dataSources:
           handler: handleCompoundWithdraw
         - event: WithdrawCollateral(indexed address,indexed address,indexed address,uint256)
           handler: handleCompoundWithdrawCollateral
+      file: ./src/mapping.ts
+  - kind: ethereum
+    name: CometWETH
+    network: mainnet
+    source:
+      address: '0xA17581A9E3356d9A858b789D68B4d866e593aE94'
+      abi: Comet
+      startBlock: 16400710
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - AaveUserStats
+        - CompoundUserStats
+        - BaseTransaction
+        - BorrowTransaction
+        - LiquidationTransaction
+        - RepayTransaction
+        - SupplyTransaction
+        - WithdrawTransaction
+        - DailyBorrowStats
+        - DailySupplyStats
+        - DailyWithdrawStats
+        - DailyLiquidationStats
+        - DailyRepayStats
+      abis:
+        - name: Comet
+          file: ./abis/Comet.json
+      eventHandlers:
+        - event: AbsorbCollateral(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleCompoundAbsorbCollateral
+        - event: AbsorbDebt(indexed address,indexed address,uint256,uint256)
+          handler: handleCompoundAbsorbDebt
+        - event: Supply(indexed address,indexed address,uint256)
+          handler: handleCompoundSupply
+        - event: Withdraw(indexed address,indexed address,uint256)
+          handler: handleCompoundWithdraw
+        - event: WithdrawCollateral(indexed address,indexed address,indexed address,uint256)
+          handler: handleCompoundWithdrawCollateral
+      file: ./src/mapping.ts
+  - kind: ethereum
+    name: CometUSDT
+    network: mainnet
+    source:
+      address: '0x3Afdc9BCA9213A35503b077a6072F3D0d5AB0840'
+      abi: Comet
+      startBlock: 20190637
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - AaveUserStats
+        - CompoundUserStats
+        - BaseTransaction
+        - BorrowTransaction
+        - LiquidationTransaction
+        - RepayTransaction
+        - SupplyTransaction
+        - WithdrawTransaction
+        - DailyBorrowStats
+        - DailySupplyStats
+        - DailyWithdrawStats
+        - DailyLiquidationStats
+        - DailyRepayStats
+      abis:
+        - name: Comet
+          file: ./abis/Comet.json
+      eventHandlers:
+        - event: AbsorbCollateral(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleCompoundAbsorbCollateral
+        - event: AbsorbDebt(indexed address,indexed address,uint256,uint256)
+          handler: handleCompoundAbsorbDebt
+        - event: Supply(indexed address,indexed address,uint256)
+          handler: handleCompoundSupply
+        - event: Withdraw(indexed address,indexed address,uint256)
+          handler: handleCompoundWithdraw
+        - event: WithdrawCollateral(indexed address,indexed address,indexed address,uint256)
+          handler: handleCompoundWithdrawCollateral
+      file: ./src/mapping.ts
+  - kind: ethereum
+    name: CometwstETH
+    network: mainnet
+    source:
+      address: '0x3D0bb1ccaB520A66e607822fC55BC921738fAFE3'
+      abi: Comet
+      startBlock: 20683535
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - AaveUserStats
+        - CompoundUserStats
+        - BaseTransaction
+        - BorrowTransaction
+        - LiquidationTransaction
+        - RepayTransaction
+        - SupplyTransaction
+        - WithdrawTransaction
+        - DailyBorrowStats
+        - DailySupplyStats
+        - DailyWithdrawStats
+        - DailyLiquidationStats
+        - DailyRepayStats
+      abis:
+        - name: Comet
+          file: ./abis/Comet.json
+      eventHandlers:
+        - event: AbsorbCollateral(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleCompoundAbsorbCollateral
+        - event: AbsorbDebt(indexed address,indexed address,uint256,uint256)
+          handler: handleCompoundAbsorbDebt
+        - event: Supply(indexed address,indexed address,uint256)
+          handler: handleCompoundSupply
+        - event: Withdraw(indexed address,indexed address,uint256)
+          handler: handleCompoundWithdraw
+        - event: WithdrawCollateral(indexed address,indexed address,indexed address,uint256)
+          handler: handleCompoundWithdrawCollateral
+      file: ./src/mapping.ts
+  - kind: ethereum
+    name: CometUSDS
+    network: mainnet
+    source:
+      address: '0x5D409e56D886231aDAf00c8775665AD0f9897b56'
+      abi: Comet
+      startBlock: 20987551
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - AaveUserStats
+        - CompoundUserStats
+        - BaseTransaction
+        - BorrowTransaction
+        - LiquidationTransaction
+        - RepayTransaction
+        - SupplyTransaction
+        - WithdrawTransaction
+        - DailyBorrowStats
+        - DailySupplyStats
+        - DailyWithdrawStats
+        - DailyLiquidationStats
+        - DailyRepayStats
+      abis:
+        - name: Comet
+          file: ./abis/Comet.json
+      eventHandlers:
+        - event: AbsorbCollateral(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleCompoundAbsorbCollateral
+        - event: AbsorbDebt(indexed address,indexed address,uint256,uint256)
+          handler: handleCompoundAbsorbDebt
+        - event: Supply(indexed address,indexed address,uint256)
+          handler: handleCompoundSupply
+        - event: Withdraw(indexed address,indexed address,uint256)
+          handler: handleCompoundWithdraw
+        - event: WithdrawCollateral(indexed address,indexed address,indexed address,uint256)
+          handler: handleCompoundWithdrawCollateral
+      file: ./src/mapping.ts
+  - kind: ethereum
+    name: SiloRepository
+    network: mainnet
+    source:
+      address: '0xbACBBefda6fD1FbF5a2d6A79916F4B6124eD2D49'
+      abi: SiloRepository
+      startBlock: 20367994
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - AaveUserStats
+        - CompoundUserStats
+        - BaseTransaction
+        - BorrowTransaction
+        - LiquidationTransaction
+        - RepayTransaction
+        - SupplyTransaction
+        - WithdrawTransaction
+        - DailyBorrowStats
+        - DailySupplyStats
+        - DailyWithdrawStats
+        - DailyLiquidationStats
+        - DailyRepayStats
+      abis:
+        - name: SiloRepository
+          file: ./abis/SiloRepository.json
+      eventHandlers:
+        - event: NewSilo(indexed address,indexed address,uint128)
+          handler: handleNewSilo
+      file: ./src/mapping.ts
+templates:
+  - kind: ethereum
+    name: Silo
+    network: mainnet
+    source:
+      abi: Silo
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - AaveUserStats
+        - CompoundUserStats
+        - BaseTransaction
+        - BorrowTransaction
+        - LiquidationTransaction
+        - RepayTransaction
+        - SupplyTransaction
+        - WithdrawTransaction
+        - DailyBorrowStats
+        - DailySupplyStats
+        - DailyWithdrawStats
+        - DailyLiquidationStats
+        - DailyRepayStats
+      abis:
+        - name: Silo
+          file: ./abis/Silo.json
+      eventHandlers:
+        - event: Borrow(indexed address,indexed address,uint256)
+          handler: handleSiloBorrow
+        - event: Deposit(indexed address,indexed address,uint256,bool)
+          handler: handleSiloDeposit
+        - event: Liquidate(indexed address,indexed address,uint256,uint256)
+          handler: handleSiloLiquidate
+        - event: Repay(indexed address,indexed address,uint256)
+          handler: handleSiloRepay
+        - event: Withdraw(indexed address,indexed address,indexed address,uint256,bool)
+          handler: handleSiloWithdraw
       file: ./src/mapping.ts
