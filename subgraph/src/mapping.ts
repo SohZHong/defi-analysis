@@ -574,6 +574,7 @@ export function handleSiloRepay(event: SiloRepayEvent): void {
   entity.reserve = event.params.asset;
   entity.amount = event.params.amount;
   entity.repayer = event.params.user;
+  entity.useATokens = false;
   entity.blockNumber = event.block.number;
   entity.timestamp = event.block.timestamp.toI64();
   entity.transactionHash = event.transaction.hash;
