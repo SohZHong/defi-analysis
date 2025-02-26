@@ -546,6 +546,7 @@ export function handleSiloLiquidate(event: SiloLiquidateEvent): void {
   entity.eventType = 'Liquidation';
   entity.protocol = 'Silo';
   entity.reserve = event.params.asset;
+  entity.liquidator = event.transaction.from;
   entity.amount = event.params.seizedCollateral;
 
   entity.blockNumber = event.block.number;
