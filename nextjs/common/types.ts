@@ -30,10 +30,21 @@ export interface CompoundUser {
   totalBorrowed: string;
 }
 
+export interface SiloUser {
+  id: string;
+  totalBorrowed: string;
+  totalLiquidated: string;
+  totalRepaid: string;
+  totalSupplied: string;
+  totalTransactions: string;
+  totalWithdrawn: string;
+}
+
 export interface User {
   id: string;
   aave: AaveUser;
   compound: CompoundUser;
+  silo: SiloUser;
 }
 
 export interface DailyStats {

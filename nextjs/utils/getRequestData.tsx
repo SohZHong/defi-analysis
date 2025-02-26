@@ -1,7 +1,8 @@
 import { DailyStatsSearchResults, User, UserTransaction } from '@/common/types';
 import { gql, request } from 'graphql-request';
 
-const url = 'https://api.studio.thegraph.com/query/90479/defi-analysis/v0.0.3';
+const url =
+  'https://api.studio.thegraph.com/query/90479/defi-analysis/version/latest';
 
 const USER_SEARCH_QUERY = gql`
   query getUser($search: String!) {
@@ -25,6 +26,15 @@ const USER_SEARCH_QUERY = gql`
         totalSupplied
         totalWithdrawn
         id
+      }
+      silo {
+        id
+        totalBorrowed
+        totalLiquidated
+        totalRepaid
+        totalSupplied
+        totalTransactions
+        totalWithdrawn
       }
     }
   }
@@ -143,6 +153,7 @@ export async function fetchTransactionData(
         skip,
       }
     );
+    // 0x06777d71071b5f8faa90dac3b7683c4696d73958
     if (response.baseTransactions.length === 0) {
       throw new Error('No data for the user is found');
     }

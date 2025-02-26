@@ -13,7 +13,12 @@ import DailyStatsChart from './DailyStatsChart';
 import { useEffect, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { Spinner } from '@heroui/spinner';
-import { AaveUser, CompoundUser, UserTransaction } from '@/common/types';
+import {
+  AaveUser,
+  CompoundUser,
+  SiloUser,
+  UserTransaction,
+} from '@/common/types';
 
 interface SearchResultsProps {
   userAddress: string;
@@ -26,8 +31,7 @@ export default function UserSearchResults({
 }: SearchResultsProps) {
   const [page, setPage] = useState<number>(1);
   const rowsPerPage = 10; // UI pagination
-  const transactionsPerQuery = 50; // Fetch in batches
-  const skip = (page - 1) * transactionsPerQuery; // Fetching in batches of 50
+  const skip = (page - 1) * rowsPerPage; // Fetching in batches of 50
 
   // Store all loaded transactions to avoid losing data
   const [allTransactions, setAllTransactions] = useState<UserTransaction[]>([]);
@@ -37,7 +41,7 @@ export default function UserSearchResults({
     isLoading,
     error: transactionError,
   } = useSWR(
-    [userAddress, protocol, transactionsPerQuery, skip],
+    [userAddress, protocol, rowsPerPage, skip],
     ([searchQuery, protocol, first, skip]) =>
       fetchTransactionData(searchQuery, protocol, first, skip),
     {
@@ -52,6 +56,7 @@ export default function UserSearchResults({
                 (tx) => !prev.some((prevTx) => prevTx.id === tx.id)
               ),
             ];
+            console.log('Transactions: ', uniqueTransactions);
             return uniqueTransactions;
           });
         }
@@ -80,7 +85,13 @@ export default function UserSearchResults({
   });
 
   const userProtocol = useMemo(() => {
-    return userData?.user[protocol === 'Aave' ? 'aave' : 'compound'];
+    return userData?.user[
+      protocol === 'Aave'
+        ? 'aave'
+        : protocol === 'Compound'
+        ? 'compound'
+        : 'silo'
+    ];
   }, [userData, protocol]);
 
   // total pages calculation
@@ -144,7 +155,9 @@ export default function UserSearchResults({
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.3 }}
             >
-              <TotalStatistics user={userProtocol as AaveUser | CompoundUser} />
+              <TotalStatistics
+                user={userProtocol as AaveUser | CompoundUser | SiloUser}
+              />
               <TransactionTable
                 transactions={paginatedTransactions}
                 isLoading={isLoading}

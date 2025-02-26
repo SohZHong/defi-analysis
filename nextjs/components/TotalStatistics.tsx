@@ -1,9 +1,9 @@
-import { AaveUser, CompoundUser } from '@/common/types';
+import { AaveUser, CompoundUser, SiloUser } from '@/common/types';
 import { isAaveUser } from '@/common/utils';
 import { ethers } from 'ethers';
 
 interface StatisticsProps {
-  user: AaveUser | CompoundUser;
+  user: AaveUser | CompoundUser | SiloUser;
 }
 
 export default function TotalStatistics({ user }: StatisticsProps) {
