@@ -1,36 +1,88 @@
 # DeFi Analytics Subgraph
 
-This subgraph indexes and analyzes user interactions with Aave's lending protocol, tracking transactions like borrowing, supplying, withdrawing, repaying, flash loans, and liquidations.
+This [subgraph](https://api.studio.thegraph.com/query/90479/defi-analysis/version/latest) indexes lending and borrowing activities across Aave, Compound, and Silo protocols. It provides aggregated transaction data, user statistics, and daily analytics for each protocol.
 
 By using The Graph Protocol, this subgraph enables efficient querying and retrieval of historical user data. Moreover, it also provides a daily report of user transaction statistics through time-series data, making it useful for DeFi analytics dashboards, research, and portfolio tracking.
-
-[Subgraph Link](https://api.studio.thegraph.com/query/90479/defi-analysis/version/latest)
 
 ## 🚀 Features ## 
 - Time-Series Tracking: Captures historical events (`BorrowTransaction`, `RepayTransaction`, etc.) for accurate insights.
 - Aggregated User Metrics: Tracks `totalBorrowed`, `totalRepaid`, `totalSupplied`, etc., reducing the need for repeated calculations.
 - Optimized Performance: Uses pre-aggregated statistics to minimize query load.
 - Daily Summaries: Provides `DailyBorrowStats`, `DailySupplyStats`, etc., to track lending activity trends.
-- Collateral Tracking: A simple `useReserveAsCollateral` flag tracks whether users are using assets as collateral.
 
-## 🔍  [Schema](/subgraph/schema.graphql)  Overview##
+## 🔍  [Schema](/subgraph/schema.graphql)  Overview ##
 
-1️⃣ **User Balances & Metrics**
+### 1️⃣ **Common Enums**
 
-The `User` entity tracks cumulative balances to optimize queries:
-| Field  | Description |
+**Event Types**
+| Event Type  | Description |
 | ------------- | ------------- |
-| `totalSupplied`  | Total amount deposited by the user |
-| `totalBorrowed`  | Total amount borrowed |
-| `totalRepaid`  | Total amount repaid |
-| `totalWithdrawn`  | Total amount withdrawn |
-| `totalLiquidated`  | Total amount liquidated |
-| `flashLoanCount`  | Number of flash loans taken |
+| `Borrow`  | User borrows assets |
+| `Liquidation`  | Repayment of borrowed assets |
+| `Repay`  | Repayment of borrowed assets |
+| `Supply`  | Supplying assets to protocol |
+| `Withdraw`  | Withdrawing supplied assets |
 
+**Protocol Types**
+| Protocol Type  | Description |
+| ------------- | ------------- |
+| `Aave`  | Aave Protocol |
+| `Compound`  | Compound Finance Protocol |
+| `Silo`  | Silo Finance Protocol |
 
-2️⃣ **Transaction Entities**
+### 2️⃣ **User Balances & Metrics**
+
+The `User` entity will hold the user's balance & metrics across all protocols:
+| Field  | Type | Description |
+| ------------- | ------------- | ------------- |
+| `aave`  | AaveUserStats | Aave-specific user statistics |
+| `compound`  | CompoundUserStats | Compound Finance-specific user statistics |
+| `silo`  | SilouserStats | Silo Finance-specific user statistics |
+| `transactions`  | [BaseTransactions!]! | List of transactions related to the user |
+
+### 3️⃣ **Protocol-Specific User Entities**
+To improve scalability, each protocol has its own entity
+#### **Aave** - `AaveUserStats`
+| Field  | Type | Description |
+| ------------- | ------------- | ------------- |
+| `user` | User! | Reference to the user |
+| `totalTransactions` | BigInt! | Total number of transactions |
+| `totalSupplied` | BigInt! | Total assets supplied |
+| `totalBorrowed` | BigInt! | Total assets borrowed |
+| `totalRepaid` | BigInt! | Total assets repaid |
+| `totalWithdrawn` | BigInt! | Total assets withdrawn |
+| `totalLiquidated` | BigInt! |Total liquidated assets |
+| `useReserveAsCollateral` | Boolean! | Indicates if collateral is used |
+
+#### **Compound & Silo (Same Structure)** - `CompoundUserStats` & `SiloUSerStats`
+| Field  | Type | Description |
+| ------------- | ------------- | ------------- |
+| `user` | User! | Reference to the user |
+| `totalTransactions` | BigInt! | Total number of transactions |
+| `totalSupplied` | BigInt! | Total assets supplied |
+| `totalBorrowed` | BigInt! | Total assets borrowed |
+| `totalRepaid` | BigInt! | Total assets repaid |
+| `totalWithdrawn` | BigInt! | Total assets withdrawn |
+| `totalLiquidated` | BigInt! |Total liquidated assets |
+
+### 4️⃣ **Transaction Entities**
+
+All transaction entities implement the `BaseTransaction` interface for scalability
+
+#### BaseTransaction
+| Field  | Type | Description |
+| ------------- | ------------- | ------------- |
+| `user` | User! | Reference to the user |
+| `protocol` | ProtocolType! | DeFi protocol type |
+| `eventType` | EventType! | Type of transaction event |
+| `amount` | BigInt! | Transaction amount |
+| `reserve` | BigInt! | Asset being transacted |
+| `blockNumber` | BigInt! | Block number of transaction |
+| `timestamp` | Timestamp! | Timestamp of transaction |
+| `transactionHash` | Bytes! | Hash of the transaction |
 
 Each **financial event** (borrow, supply, repay, etc.) is logged as an entity for detailed historical tracking.
+
 | Transaction Type  | Purpose |
 | ------------- | ------------- |
 | `BorrowTransaction`  | Tracks user borrow events |
@@ -38,14 +90,44 @@ Each **financial event** (borrow, supply, repay, etc.) is logged as an entity fo
 | `SupplyTransaction`  | Captures asset deposits into the protocol |
 | `WithdrawTransaction`  | Records user withdrawals |
 | `LiquidationTransaction`  | Tracks liquidations and their impact |
-| `FlashLoanTransaction`  | Monitors flash loans and fees|
 
-Each transaction includes:
-- Amount, Timestamp, Block Number, Transaction Hash
-- Additional details (e.g., borrowRate, onBehalfOf, liquidator, etc.)
+#### BorrowTransaction
+| Field  | Type | Description |
+| ------------- | ------------- | ------------- |
+| `onBehalfOf` | Bytes | Address on whose behalf borrowing occurs |
+| `interestRateMode` | Int | Interest rate type |
+| `borrowRate` | BigInt | Rate at which borrowing happens |
+| `referralCode` | Int | Referral identifier |
 
+#### RepayTransaction
+| Field  | Type | Description |
+| ------------- | ------------- | ------------- |
+| `repayer` | Bytes! | Address of the repayer |
+| `useATokens` | Boolean! | Whether aTokens were used for repayment |
+| `usdValue` | BigInt | USD value of the repayment |
 
-3️⃣ **Daily Aggregations**
+#### SupplyTransaction
+| Field  | Type | Description |
+| ------------- | ------------- | ------------- |
+| `dst` | Bytes | Destination address |
+| `onBehalfOf` | Bytes | Address on whose behalf supply occurs |
+| `referralCode` | Int | Referral identifier |
+
+#### WithdrawTransaction
+| Field  | Type | Description |
+| ------------- | ------------- | ------------- |
+| `to` | Bytes~ | Address receiving funds |
+
+#### LiquidationTransaction
+| Field  | Type | Description |
+| ------------- | ------------- | ------------- |
+| `debtAsset` | Bytes | Asset used for debt repayment |
+| `debtToCover` | BigInt | Amount of debt covered |
+| `liquidator` | Bytes! | Liquidator's address |
+| `receiveAToken` | Boolean | Whether aToken is received in liquidationr |
+| `usdValue` | BigInt | USD value of the liquidation |
+
+4️⃣**Daily Aggregations**
 
 To analyze trends over time, **daily aggregated statistics** are stored:
 |  Aggregation Type  | Source Entity | Function |
@@ -307,13 +389,16 @@ export function handleReserveUsedAsCollateralDisabled(event: ReserveUsedAsCollat
 ## 🚧 Challenges and Solutions
 1. Finding the ABI of the Actual Contract
 **Challenge:** Aave’s website primarily provides the proxy contract address, making it difficult to retrieve the actual implementation contract’s ABI.
+
 **Solution:** I manually traced the proxy contract and find the correct implementation address (PoolInstance) using Etherscan.
 
-2. Optimizing Subgraph with Time-Series Data
+3. Optimizing Subgraph with Time-Series Data
 **Challenge:** Handling large amounts of historical transaction data efficiently was a challenge, as querying raw events in bulk could lead to performance bottlenecks
+
 **Solution:** I referred to [The Graph's documentation](https://thegraph.com/docs/en/subgraphs/cookbook/timeseries/) and experimented on another subgraph to familiar myself with time-series aggregation. The key metrics can then be pre-computed by the database and improve query performance.
 
-3. Identifying Relevant Events
+4. Identifying Relevant Events
 **Challenge:** Aave's pool contract emits too many events and I had a hard time trying to identify which is useful.
+
 **Solution:** I conducted research through ChatGPT and online sources to determine which is useful for a user-focused analysis. This helped me modify the subgraph's schema accordingly and avoid unnecessary data processing.
 
