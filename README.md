@@ -10,6 +10,18 @@ By using The Graph Protocol, this subgraph enables efficient querying and retrie
 - Optimized Performance: Uses pre-aggregated statistics to minimize query load.
 - Daily Summaries: Provides `DailyBorrowStats`, `DailySupplyStats`, etc., to track lending activity trends.
 
+## 📌 Implementation Overview
+### Aave Integration
+For Aave, the subgraph first determines the underlying implementation contract of the Aave Pool through Etherscan. It generates the required handlers based on the implementation contract’s ABI before switching the tracked address and start block to the proxy contract. This method guarantees that all core lending and borrowing interactions are properly indexed while maintaining compatibility with future upgrades.
+
+### Compound Integration
+For Compound, each asset is represented by its own smart contract rather than a unified proxy. As a result, I manually identified and added each asset contract to the subgraph YAML file. The subgraph then listens to on-chain events emitted by these contracts and maps them to corresponding entities, ensuring real-time indexing of lending and borrowing activities.
+
+### Silo Integration
+The implementation is slightly different due to its modular architecture. The subgraph first tracks the `SiloRepository` contract, which acts as a registry for all deployed `Silo` contracts. When a new Silo contract is created, it emits a `NewSiloCreated` event and is dynamically tracked using subgraph templates. This allows the subgraph to scale efficiently and index new Silo deployments without manual updates.
+
+Each event updates **user balances** and logs a **transaction record**.
+
 ## 🔍  [Schema](/subgraph/schema.graphql)  Overview ##
 
 ### 1️⃣ **Common Enums**
@@ -127,7 +139,7 @@ Each **financial event** (borrow, supply, repay, etc.) is logged as an entity fo
 | `receiveAToken` | Boolean | Whether aToken is received in liquidationr |
 | `usdValue` | BigInt | USD value of the liquidation |
 
-4️⃣**Daily Aggregations**
+### 5️⃣**Daily Aggregations**
 
 To analyze trends over time, **daily aggregated statistics** are stored:
 |  Aggregation Type  | Source Entity | Function |
@@ -140,227 +152,28 @@ To analyze trends over time, **daily aggregated statistics** are stored:
 
 These daily summaries make it easier to track trends (e.g., total borrow volume in the last 30 days).
 
-## 📌 [Event Handlers](/subgraph/src/mappings.ts) Overview
-
-Each event updates **user balances** and logs a **transaction record**.
-
-1️⃣ **User Entity Management**
-
-The `loadUser` function ensures that a user entity exists before updating it.
-```typescript
-function loadUser(id: Bytes): User {
-  let user = User.load(id);
-  if (!user) {
-    user = new User(id);
-    user.totalSupplied = BigInt.zero();
-    user.totalBorrowed = BigInt.zero();
-    user.totalRepaid = BigInt.zero();
-    user.totalWithdrawn = BigInt.zero();
-    user.totalLiquidated = BigInt.zero();
-    user.flashLoanCount = 0;
-    user.useReserveAsCollateral = false;
-  }
-  return user;
-}
-```
-
-2️⃣ **Borrow Event**
-
-- Increases `totalBorrowed` when a user **borrows** funds.
-- Registers a `BorrowTransaction` entity.
-
-```typescript
-export function handleBorrow(event: BorrowEvent): void {
-  let user = loadUser(event.params.user);
-  // Update total borrowed
-  user.totalBorrowed = user.totalBorrowed.plus(event.params.amount);
-  user.save();
-
-  // Save Transaction
-  let tx = new BorrowTransaction(
-    event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
-  );
-  tx.user = user.id;
-  tx.eventType = "Borrow";
-  tx.reserve = event.params.reserve;
-  tx.amount = event.params.amount;
-  tx.onBehalfOf = event.params.onBehalfOf;
-  tx.interestRateMode = event.params.interestRateMode;
-  tx.borrowRate = event.params.borrowRate;
-  tx.referralCode = event.params.referralCode;
-  tx.blockNumber = event.block.number;
-  tx.timestamp = event.block.timestamp.toI64();
-  tx.transactionHash = event.transaction.hash;
-
-  tx.save();
-}
-```
-
-**3️⃣ Supply Event**
-- Increases `totalSupplied` when a user **deposits** funds.
-- Registers a `SupplyTransaction` entity.
-
-```typescript
-export function handleSupply(event: SupplyEvent): void {
-  let user = loadUser(event.params.user);
-  // Update total supplied
-  user.totalSupplied = user.totalSupplied.plus(event.params.amount);
-  user.save();
-
-  let tx = new SupplyTransaction(
-    event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
-  );
-  tx.user = user.id;
-  tx.eventType = "Supply";
-  tx.reserve = event.params.reserve;
-  tx.amount = event.params.amount;
-  tx.onBehalfOf = event.params.onBehalfOf;
-  tx.referralCode = event.params.referralCode;
-  tx.blockNumber = event.block.number;
-  tx.timestamp = event.block.timestamp.toI64();
-  tx.transactionHash = event.transaction.hash;
-  tx.save();
-}
-```
-
-**4️⃣ Withdraw Event**
-- Increases `totalWithdrawn` when a user **withdraws** funds.
-- Registers a `WithdrawTransaction` entity.
-
-```typescript
-export function handleWithdraw(event: WithdrawEvent): void {
-  let user = loadUser(event.params.user);
-  // Update total withdrawn
-  user.totalWithdrawn = user.totalWithdrawn.plus(event.params.amount);
-  user.save();
-
-  let tx = new WithdrawTransaction(
-    event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
-  );
-  tx.user = user.id;
-  tx.eventType = "Withdraw";
-  tx.reserve = event.params.reserve;
-  tx.amount = event.params.amount;
-  tx.to = event.params.to;
-  tx.blockNumber = event.block.number;
-  tx.timestamp = event.block.timestamp.toI64();
-  tx.transactionHash = event.transaction.hash;
-  tx.save();
-}
-```
-
-**5️⃣ Repay Event**
-- Increases `totalRepaid` when a user **repays borrowed** funds.
-- Registers a `RepayTransaction` entity.
-
-```typescript
-export function handleRepay(event: RepayEvent): void {
-  let user = loadUser(event.params.user);
-  // Update total repaid
-  user.totalRepaid = user.totalRepaid.plus(event.params.amount);
-  user.save();
-
-  let tx = new RepayTransaction(
-    event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
-  );
-  tx.user = user.id;
-  tx.eventType = "Repay";
-  tx.reserve = event.params.reserve;
-  tx.amount = event.params.amount;
-  tx.repayer = event.params.repayer;
-  tx.useATokens = event.params.useATokens;
-  tx.blockNumber = event.block.number;
-  tx.timestamp = event.block.timestamp.toI64();
-  tx.transactionHash = event.transaction.hash;
-  tx.save();
-}
-```
-
-**6️⃣ Flash Loan Event**
-- Increases `flashLoanCount` when a user **takes a flash loan**.
-- Does not affect balances (since flash loans are repaid immediately).
-- Registers a `FlashLoanTransaction` entity.
- ```typescript
-export function handleFlashLoan(event: FlashLoanEvent): void {
-  let user = loadUser(event.params.initiator);
-  // Increment flash loan by 1
-  user.flashLoanCount += 1;
-  user.save();
-
-  let tx = new FlashLoanTransaction(
-    event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
-  );
-  tx.user = user.id;
-  tx.eventType = "FlashLoan";
-  tx.amount = event.params.amount;
-  tx.reserve = event.params.asset;
-  tx.target = event.params.target;
-  tx.interestRateMode = event.params.interestRateMode;
-  tx.premium = event.params.premium;
-  tx.referralCode = event.params.referralCode;
-  tx.blockNumber = event.block.number;
-  tx.timestamp = event.block.timestamp.toI64();
-  tx.transactionHash = event.transaction.hash;
-  tx.save();
-}
-```
-
-**7️⃣ Liquidation Event**
-- Updates `totalLiquidated` when a user is **liquidated**.
-- Registers a `LiquidationTransaction` entity.
- ```typescript
-export function handleLiquidationCall(event: LiquidationCallEvent): void {
-  let user = loadUser(event.params.user);
-  // Update total liquidated
-  user.totalLiquidated = user.totalLiquidated.plus(
-    event.params.liquidatedCollateralAmount
-  );
-
-  let tx = new LiquidationTransaction(
-    event.transaction.hash.concatI32(event.logIndex.toI32()).toHex()
-  );
-  tx.user = user.id;
-  tx.eventType = "Liquidation";
-  tx.amount = event.params.liquidatedCollateralAmount;
-  tx.reserve = event.params.collateralAsset;
-  tx.debtAsset = event.params.debtAsset;
-  tx.debtToCover = event.params.debtToCover;
-  tx.liquidator = event.params.liquidator;
-  tx.receiveAToken = event.params.receiveAToken;
-  tx.blockNumber = event.block.number;
-  tx.timestamp = event.block.timestamp.toI64();
-  tx.transactionHash = event.transaction.hash;
-  tx.save();
-}
-```
-
-**8️⃣ Collateral Usage Events**
-**Enabling Collateral**: Marks `useReserveAsCollateral` = true.
- ```typescript
-export function handleReserveUsedAsCollateralEnabled(event: ReserveUsedAsCollateralEnabledEvent): void {
-  let user = loadUser(event.params.user);
-  user.useReserveAsCollateral = true;
-  user.save();
-}
-```
-**Disabling Collateral**: Marks `useReserveAsCollateral` = false.
- ```typescript
-export function handleReserveUsedAsCollateralDisabled(event: ReserveUsedAsCollateralDisabledEvent): void {
-  let user = loadUser(event.params.user);
-  user.useReserveAsCollateral = false;
-  user.save();
-}
-```
-
 ## 📌 Usage Examples [(Playground)](https://api.studio.thegraph.com/query/90479/defi-analysis/version/latest) ##
 
-**Query: Get a User’s Total Borrowed & Repaid**
+**Query: Get a User’s Statistics on various protocols**
 ```graphql
 {
   user(id: "0x123...") {
-    totalBorrowed
-    totalRepaid
-    useReserveAsCollateral
+    aave {
+      totalBorrowed
+      totalLiquidated
+      totalSupplied
+      totalRepaid
+    }
+    compound {
+      totalBorrowed
+      totalLiquidated
+      totalWithdrawn
+    }
+    silo {
+      totalLiquidated
+      totalSupplied
+      totalTransactions
+    }
   }
 }
 ```
@@ -388,17 +201,26 @@ export function handleReserveUsedAsCollateralDisabled(event: ReserveUsedAsCollat
 
 ## 🚧 Challenges and Solutions
 1. Finding the ABI of the Actual Contract
+
 **Challenge:** Aave’s website primarily provides the proxy contract address, making it difficult to retrieve the actual implementation contract’s ABI.
 
-**Solution:** I manually traced the proxy contract and find the correct implementation address (PoolInstance) using Etherscan.
+**Solution:** I manually traced the proxy contract and find the correct the protocol's implementation address (PoolInstance) using Etherscan.
 
-3. Optimizing Subgraph with Time-Series Data
+2. Optimizing Subgraph with Time-Series Data
+
 **Challenge:** Handling large amounts of historical transaction data efficiently was a challenge, as querying raw events in bulk could lead to performance bottlenecks
 
 **Solution:** I referred to [The Graph's documentation](https://thegraph.com/docs/en/subgraphs/cookbook/timeseries/) and experimented on another subgraph to familiar myself with time-series aggregation. The key metrics can then be pre-computed by the database and improve query performance.
 
-4. Identifying Relevant Events
-**Challenge:** Aave's pool contract emits too many events and I had a hard time trying to identify which is useful.
+3. Identifying Relevant Events
+
+**Challenge:** The proxy, implementation contracts from Aave, Compound and Silo emits too many events and I had a hard time trying to identify which is useful.
 
 **Solution:** I conducted research through ChatGPT and online sources to determine which is useful for a user-focused analysis. This helped me modify the subgraph's schema accordingly and avoid unnecessary data processing.
+
+4. Templating the Silo Factory
+
+**Challenge**: Silo dynamically deploys new contracts, requiring an efficient way to track each instance without manually updating the subgraph.
+
+**Solution**: I used The Graph's templating feature to transform `Silo` contracts systematically deployed by the `SiloRepository` contract to automatically register them they are deployed, ensuring scalability and efficiency.
 
