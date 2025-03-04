@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang='en' suppressHydrationWarning>
       <body className={`${dmSans.variable} 'antialiased'`}>
-        <ThemeProvider>
+        <ThemeProvider defaultTheme="dark" forcedTheme="dark">
           <ScaffoldWithProvider>{children}</ScaffoldWithProvider>
         </ThemeProvider>
       </body>
